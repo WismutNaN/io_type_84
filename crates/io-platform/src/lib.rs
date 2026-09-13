@@ -1,8 +1,11 @@
 //! Платформенные адаптеры. HID открывается только при явном подключении.
 
+pub mod changes;
 pub mod device;
+pub mod layout;
 pub mod monitor;
 pub mod protocol;
+pub mod service;
 
 use io_core::application::{AppInfo, DeviceAccess};
 

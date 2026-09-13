@@ -58,6 +58,7 @@ pub struct Actuation {
     pub press_um: u16,
     pub release_um: u16,
     pub rapid_trigger: bool,
+    pub whole_travel: bool,
     pub rampage: bool,
     pub axis_type: u8,
 }

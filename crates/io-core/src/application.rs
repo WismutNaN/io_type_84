@@ -28,7 +28,7 @@ pub fn typescript_contracts() -> String {
         AppInfo::decl(&config),
     );
     declarations.push_str(&crate::keyboard::typescript_contracts(&config));
-    declarations
+    format!("{}\n", declarations.trim_end())
 }
 
 #[cfg(test)]
@@ -44,15 +44,15 @@ mod tests {
     }
 
     #[test]
-    fn ipc_reports_unimplemented_transport_without_a_fake_connection() {
+    fn ipc_reports_transport_availability_without_claiming_a_connection() {
         let info = AppInfo {
             name: "IO Type 84".into(),
             version: "0.1.0".into(),
             platform: "windows".into(),
-            device_access: DeviceAccess::NotImplemented,
+            device_access: DeviceAccess::Available,
         };
         let json = serde_json::to_value(info).unwrap();
-        assert_eq!(json["deviceAccess"], "notImplemented");
+        assert_eq!(json["deviceAccess"], "available");
         assert!(json.get("device_access").is_none());
         assert!(json.get("connected").is_none());
     }

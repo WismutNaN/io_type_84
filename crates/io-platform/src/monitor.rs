@@ -31,6 +31,13 @@ impl Default for MonitorState {
 }
 
 impl MonitorState {
+    pub fn pause(&mut self) {
+        self.active = false;
+        self.down.fill(false);
+        self.travel.clear();
+        self.colors.clear();
+        self.color_time = None;
+    }
     pub fn ingest(&mut self, packet: &[u8]) {
         if packet.len() < 14 || packet[..2] != [0x55, 0xfb] || packet[2] >= 128 {
             return;
@@ -134,5 +141,10 @@ mod tests {
         state.ingest(&[0x55, 0xfb]);
         state.ingest(&packet(255, 100));
         assert_eq!(state.frame().history.len(), 20);
+        state.ingest(&packet(49, 100));
+        state.pause();
+        assert!(state.frame().travel.is_empty());
+        state.ingest(&packet(49, 100));
+        assert_eq!(state.frame().history[0].sequence, 27);
     }
 }

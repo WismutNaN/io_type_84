@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2026-09-14",
+  "device": "IO Type 84 Magnetic White 0C45:80D6, firmware 1.17",
+  "beforeRevision": "01c60666f303a9f67b4a13011f9f870b766774569301d99e36171786d9f68f18",
+  "afterRestoreRevision": "01c60666f303a9f67b4a13011f9f870b766774569301d99e36171786d9f68f18",
+  "lighting": {
+    "change": "brightness 5 -> 4 -> 5",
+    "setCommand": "23",
+    "readbackMatched": true,
+    "initialExperiment": "Readback failed when FF/AA/55 write markers were incorrectly expected in GET; restored after fixing codec, then full roundtrip passed",
+    "writeOnlyOffsets": { "4": 255, "14": 170, "15": 85 }
+  },
+  "configuration": {
+    "method": "cargo run -p io-platform --example verify_configuration -- --run",
+    "targetRevision": "29baf52db00cceb51965cfa0be82f9b4e6d2d1c1fbee1fcdb983e57e5cf65d19",
+    "changes": [
+      { "block": "macros", "changedBytes": 14, "detail": "unbound slot 0, A press/release with 10 ms delays" },
+      { "block": "dks", "changedBytes": 6, "detail": "unbound free entry, thresholds 16/30/30/16, action A" },
+      { "block": "actuation", "changedBytes": 3, "detail": "F12: trigger 1.2 mm, RT press 0.1 mm, release 0.2 mm" },
+      { "block": "base", "changedBytes": 1, "detail": "F12 -> F11" },
+      { "block": "function", "changedBytes": 2, "detail": "Fn F12 -> F10" },
+      { "block": "colors", "changedBytes": 3, "detail": "slot 12 RGB 46/80/130" }
+    ],
+    "applySucceeded": true,
+    "everyChangedBlockReadbackMatched": true,
+    "restoreReadbackMatched": true,
+    "macroFreeTailBackedUpAndRestored": true
+  },
+  "limits": [
+    "Readback proves stored protocol data, not physical macro/advanced-key execution",
+    "Power-cycle persistence not tested",
+    "SET 21 performance not exercised",
+    "No calibration, reset or firmware flashing"
+  ]
+}

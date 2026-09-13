@@ -255,7 +255,7 @@ impl NativeDevice {
         Ok(())
     }
 
-    pub fn poll_notifications(&mut self, timeout_ms: i32) -> Result<()> {
+    pub fn poll_notifications(&mut self, timeout_ms: i32) -> Result<bool> {
         let mut input = [0; 64];
         let n = self
             .handle
@@ -264,7 +264,7 @@ impl NativeDevice {
         if n >= 2 && input[0] == 0x55 && input[1] >= 0xfa {
             self.queue_notification(&input[..n]);
         }
-        Ok(())
+        Ok(n > 0)
     }
 
     pub fn current_colors(&mut self) -> Result<Vec<LiveColor>> {
@@ -363,7 +363,8 @@ impl RawSnapshot {
                         trigger_um: word(a, 2).saturating_mul(10),
                         press_um: word(a, 4).saturating_mul(10),
                         release_um: word(a, 6).saturating_mul(10),
-                        rapid_trigger: a[1] & 1 != 0,
+                        rapid_trigger: word(a, 4) > 0 || word(a, 6) > 0,
+                        whole_travel: a[1] & 1 != 0,
                         rampage: a[1] & 2 != 0,
                         axis_type: a[0],
                     },

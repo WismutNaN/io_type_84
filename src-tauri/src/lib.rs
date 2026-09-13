@@ -3,15 +3,102 @@ fn app_info() -> io_core::application::AppInfo {
     io_platform::application_info()
 }
 
+use io_core::keyboard::*;
+use io_platform::service::KeyboardService;
+use tauri::Manager;
+
+async fn background<T: Send + 'static>(
+    task: impl FnOnce() -> Result<T> + Send + 'static,
+) -> Result<T> {
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|_| AppError::new("taskFailed", "Операция приложения прервана."))?
+}
+
+#[tauri::command]
+async fn connect_device(service: tauri::State<'_, KeyboardService>) -> Result<KeyboardSnapshot> {
+    let s = service.inner().clone();
+    background(move || s.connect()).await
+}
+#[tauri::command]
+async fn disconnect_device(service: tauri::State<'_, KeyboardService>) -> Result<()> {
+    let s = service.inner().clone();
+    background(move || s.disconnect()).await
+}
+#[tauri::command]
+async fn refresh_device(service: tauri::State<'_, KeyboardService>) -> Result<KeyboardSnapshot> {
+    let s = service.inner().clone();
+    background(move || s.refresh()).await
+}
+#[tauri::command]
+async fn set_monitor(
+    enabled: bool,
+    service: tauri::State<'_, KeyboardService>,
+) -> Result<MonitorFrame> {
+    let s = service.inner().clone();
+    background(move || s.monitor(enabled)).await
+}
+#[tauri::command]
+fn monitor_frame(service: tauri::State<'_, KeyboardService>) -> MonitorFrame {
+    service.monitor_frame()
+}
+#[tauri::command]
+fn clear_history(service: tauri::State<'_, KeyboardService>) {
+    service.clear_history();
+}
+#[tauri::command]
+async fn prepare_changes(
+    request: ChangeRequest,
+    service: tauri::State<'_, KeyboardService>,
+) -> Result<ChangePreview> {
+    let s = service.inner().clone();
+    background(move || s.prepare(request)).await
+}
+#[tauri::command]
+async fn apply_changes(
+    token: String,
+    service: tauri::State<'_, KeyboardService>,
+) -> Result<ApplyResult> {
+    let s = service.inner().clone();
+    background(move || s.apply(token)).await
+}
+#[tauri::command]
+async fn prepare_recovery(service: tauri::State<'_, KeyboardService>) -> Result<ChangePreview> {
+    let s = service.inner().clone();
+    background(move || s.prepare_recovery()).await
+}
+
 fn app_context() -> tauri::Context<tauri::Wry> {
     tauri::generate_context!()
 }
 
 pub fn run() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![app_info])
-        .run(app_context())
+    let app = tauri::Builder::default()
+        .setup(|app| {
+            app.manage(KeyboardService::new(
+                app.path().app_data_dir()?.join("recovery"),
+            ));
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            app_info,
+            connect_device,
+            disconnect_device,
+            refresh_device,
+            set_monitor,
+            monitor_frame,
+            clear_history,
+            prepare_changes,
+            apply_changes,
+            prepare_recovery
+        ])
+        .build(app_context())
         .expect("Не удалось запустить IO Type 84");
+    app.run(|app, event| {
+        if let tauri::RunEvent::Exit = event {
+            let _ = app.state::<KeyboardService>().disconnect();
+        }
+    });
 }
 
 #[cfg(all(test, feature = "custom-protocol"))]

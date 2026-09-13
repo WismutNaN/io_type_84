@@ -11,7 +11,7 @@ export type Rgb = { r: number, g: number, b: number, };
 
 export type BindingRecord = { page: number, parameters: [number, number, number], };
 
-export type Actuation = { triggerUm: number, pressUm: number, releaseUm: number, rapidTrigger: boolean, rampage: boolean, axisType: number, };
+export type Actuation = { triggerUm: number, pressUm: number, releaseUm: number, rapidTrigger: boolean, wholeTravel: boolean, rampage: boolean, axisType: number, };
 
 export type KeyConfiguration = { slot: number, base: BindingRecord, function: BindingRecord, actuation: Actuation, ledId: number, color: Rgb, };
 
@@ -44,4 +44,3 @@ export type KeyPress = { sequence: number, slot: number, peakUm: number, };
 export type LiveColor = { ledId: number, color: Rgb, };
 
 export type MonitorFrame = { active: boolean, travel: Array<KeyTravel>, history: Array<KeyPress>, colors: Array<LiveColor>, colorAgeMs: number | null, packets: number, message: string | null, };
-
