@@ -1,6 +1,11 @@
 //! Ограниченная история физических нажатий; никаких файлов и глобальных hooks.
 use io_core::keyboard::*;
-use std::{collections::BTreeMap, time::Instant};
+use std::{
+    collections::BTreeMap,
+    time::{Duration, Instant},
+};
+
+pub const SAMPLE_TTL: Duration = Duration::from_millis(600);
 
 pub struct MonitorState {
     pub active: bool,
@@ -39,6 +44,9 @@ impl MonitorState {
         self.color_time = None;
     }
     pub fn ingest(&mut self, packet: &[u8]) {
+        self.ingest_at(packet, Instant::now());
+    }
+    fn ingest_at(&mut self, packet: &[u8], now: Instant) {
         if packet.len() < 14 || packet[..2] != [0x55, 0xfb] || packet[2] >= 128 {
             return;
         }
@@ -49,6 +57,14 @@ impl MonitorState {
         }
         let slot = packet[2];
         let depth = travel * 10;
+        // Потерянный release не должен склеивать два отдельных движения.
+        if self
+            .travel
+            .get(&slot)
+            .is_some_and(|(_, time)| now.duration_since(*time) >= SAMPLE_TTL)
+        {
+            self.down[usize::from(slot)] = false;
+        }
         self.packets = self.packets.saturating_add(1);
         self.travel.insert(
             slot,
@@ -60,11 +76,11 @@ impl MonitorState {
                     adc: u16::from_le_bytes([packet[8], packet[9]]),
                     age_ms: 0,
                 },
-                Instant::now(),
+                now,
             ),
         );
         // История начала физического движения; не утверждение о HID key-down/RT.
-        if depth >= 100 && !self.down[usize::from(slot)] {
+        if depth >= 300 && !self.down[usize::from(slot)] {
             self.down[usize::from(slot)] = true;
             self.sequence = self.sequence.wrapping_add(1);
             self.history.insert(
@@ -80,7 +96,7 @@ impl MonitorState {
             if let Some(event) = self.history.iter_mut().find(|e| e.slot == slot) {
                 event.peak_um = event.peak_um.max(depth);
             }
-            if depth <= 50 {
+            if depth <= 150 {
                 self.down[usize::from(slot)] = false;
             }
         }
@@ -129,7 +145,7 @@ mod tests {
     fn history_is_bounded_and_repeat_reports_do_not_duplicate_presses() {
         let mut state = MonitorState::default();
         for _ in 0..25 {
-            state.ingest(&packet(49, 100));
+            state.ingest(&packet(49, 300));
             state.ingest(&packet(49, 2230));
             state.ingest(&packet(49, 0));
         }
@@ -141,10 +157,28 @@ mod tests {
         state.ingest(&[0x55, 0xfb]);
         state.ingest(&packet(255, 100));
         assert_eq!(state.frame().history.len(), 20);
-        state.ingest(&packet(49, 100));
+        state.ingest(&packet(49, 300));
         state.pause();
         assert!(state.frame().travel.is_empty());
-        state.ingest(&packet(49, 100));
+        state.ingest(&packet(49, 300));
         assert_eq!(state.frame().history[0].sequence, 27);
+    }
+    #[test]
+    fn missing_release_rearms_history_but_fresh_hold_does_not() {
+        let mut state = MonitorState::default();
+        let now = Instant::now();
+        state.ingest_at(&packet(49, 900), now);
+        state.ingest_at(&packet(49, 1000), now + Duration::from_millis(50));
+        assert_eq!(state.history.len(), 1);
+        state.ingest_at(&packet(49, 1200), now + Duration::from_secs(1));
+        assert_eq!(state.history.len(), 2);
+    }
+    #[test]
+    fn idle_noise_does_not_fill_the_history() {
+        let mut state = MonitorState::default();
+        for depth in [0, 100, 180, 160, 0] {
+            state.ingest(&packet(58, depth));
+        }
+        assert!(state.history.is_empty());
     }
 }

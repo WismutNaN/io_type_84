@@ -18,7 +18,7 @@ const travel = computed(() => new Map(props.live.travel.map((k) => [k.slot, k]))
 const colors = computed(() => new Map(props.live.colors.map((c) => [c.ledId, c.color])));
 function depth(slot: number) {
   const k = travel.value.get(slot);
-  return props.live.active && k && k.ageMs < 1500 ? k.travelUm : null;
+  return props.live.active && k && k.ageMs < 600 ? k.travelUm : null;
 }
 function color(slot: number) {
   const k = props.snapshot?.keys[slot];
@@ -62,7 +62,7 @@ function customBinding(slot: number) {
             class="keycap"
             :class="{
               selected: selected.includes(key.slot),
-              pressed: (depth(key.slot) ?? 0) >= 100,
+              pressed: (depth(key.slot) ?? 0) >= 300,
               measured: view === 'travel' && depth(key.slot) !== null,
             }"
             :style="{

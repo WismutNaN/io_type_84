@@ -38,6 +38,7 @@ const {
   connected,
   preview,
   live,
+  displayLive,
   profiles,
   recoveryPreview,
 } = workspace;
@@ -120,11 +121,11 @@ const previewDetails = computed(() => {
   if (dks.length) lines.push(`Изменены записи DKS: ${dks.map((d) => d.index + 1).join(', ')}`);
   return lines;
 });
-const focused = computed(() => live.value.travel.find((k) => k.slot === selected.value[0]));
+const focused = computed(() => displayLive.value.travel.find((k) => k.slot === selected.value[0]));
 const freshTravel = computed(() =>
-  live.value.active ? live.value.travel.filter((k) => k.ageMs < 1500) : [],
+  live.value.active ? displayLive.value.travel.filter((k) => k.ageMs < 600) : [],
 );
-const moving = computed(() => freshTravel.value.filter((k) => k.travelUm >= 100));
+const moving = computed(() => freshTravel.value.filter((k) => k.travelUm >= 300));
 const colorHex = computed({
   get: () => hexColor(light.value.color),
   set: (value: string) => {
@@ -551,7 +552,7 @@ function modalKeys(event: KeyboardEvent) {
               <KeyboardPreview
                 :snapshot="draft"
                 :selected="selected"
-                :live="live"
+                :live="displayLive"
                 :view="view"
                 :function-layer="functionLayer"
                 :multi="multi"

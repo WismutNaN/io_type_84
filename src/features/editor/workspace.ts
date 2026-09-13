@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue';
+import { computed, ref, onScopeDispose } from 'vue';
+import { ageFrame } from './telemetry';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type {
   ApplyResult,
@@ -30,6 +31,13 @@ export function useWorkspace() {
     connected = ref(false),
     preview = ref<ChangePreview | null>(null);
   const live = ref<MonitorFrame>(emptyFrame());
+  const receivedAt = ref(performance.now());
+  const clock = ref(performance.now());
+  const clockTimer = setInterval(() => {
+    clock.value = performance.now();
+  }, 50);
+  onScopeDispose(() => clearInterval(clockTimer));
+  const displayLive = computed(() => ageFrame(live.value, clock.value - receivedAt.value));
   const recoveryPreview = ref(false);
   const profiles = ref<LocalProfile[]>([]);
   try {
@@ -145,6 +153,7 @@ export function useWorkspace() {
   async function monitor() {
     await run(live.value.active ? 'Остановка…' : 'Включение наблюдения…', async () => {
       live.value = await invoke<MonitorFrame>('set_monitor', { enabled: !live.value.active });
+      receivedAt.value = performance.now();
     });
   }
   let polling = false;
@@ -153,6 +162,7 @@ export function useWorkspace() {
     polling = true;
     try {
       live.value = await invoke<MonitorFrame>('monitor_frame');
+      receivedAt.value = performance.now();
     } catch {
       live.value.active = false;
     } finally {
@@ -247,6 +257,7 @@ export function useWorkspace() {
     connected,
     preview,
     live,
+    displayLive,
     profiles,
     recoveryPreview,
     stage,
