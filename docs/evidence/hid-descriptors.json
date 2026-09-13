@@ -1,0 +1,30 @@
+{
+  "captured_at": "2026-09-13",
+  "vid": "0C45",
+  "pid": "80D6",
+  "product": "IO Type 84 Magnetic White",
+  "interfaces": [
+    {
+      "interface": 2,
+      "usage_page": "FF68",
+      "usage": "0061",
+      "opened": true,
+      "report_id": 0,
+      "input_bytes": 64,
+      "output_bytes": 64,
+      "feature_bytes": 0,
+      "descriptor_hex": "06 68 ff 09 61 a1 01 09 62 15 00 26 ff 00 75 08 95 40 81 02 09 63 15 00 26 ff 00 75 08 95 40 91 02 c0"
+    },
+    {
+      "interface": 3,
+      "usage_page": "FF67",
+      "usage": "0061",
+      "opened": true,
+      "report_id": 0,
+      "input_bytes": 0,
+      "output_bytes": 4096,
+      "feature_bytes": 64,
+      "descriptor_hex": "06 67 ff 09 61 a1 01 09 63 15 00 26 ff 00 75 08 96 00 10 91 02 09 62 15 00 26 ff 00 75 08 95 40 b1 02 c0"
+    }
+  ]
+}

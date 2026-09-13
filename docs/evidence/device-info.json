@@ -1,0 +1,33 @@
+{
+  "captured_at": "2026-09-13T16:49:39.049135+00:00",
+  "method": "native hidapi; GET_DEVICE_INFO only; no configuration writes",
+  "identity": {
+    "vendor_id": 3141,
+    "product_id": 32982,
+    "release_number": 279,
+    "manufacturer_string": "IO",
+    "product_string": "IO Type 84 Magnetic White",
+    "usage_page": 65384,
+    "usage": 97,
+    "interface_number": 2,
+    "bus_type": 1
+  },
+  "request_hex": "aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+  "response_hex": "55 10 30 00 00 00 01 00 00 00 00 92 45 0c d6 80 17 01 00 00 66 01 0c 11 0a 00 00 00 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+  "native_write_count": 65,
+  "decoded": {
+    "vid": "0xc45",
+    "pid": "0x80d6",
+    "version": 1.17,
+    "sensor": 0,
+    "manufacturer": 358,
+    "product": 4364,
+    "workMode": 10,
+    "currentProfile": 0,
+    "axisInfo": 15,
+    "ledMaxFrames": 0,
+    "rtPrecision": 0,
+    "frameVersion": 0,
+    "lightingVersion": 0
+  }
+}

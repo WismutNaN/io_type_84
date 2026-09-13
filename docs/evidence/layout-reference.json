@@ -1,0 +1,429 @@
+{
+  "source_bundle": "layout-classic-DXDjowst.js",
+  "source_symbol": "cc",
+  "physical_keys": 84,
+  "protocol_slots": 128,
+  "notes": "Address reference from model configuration; Fn code 175 is vendor-specific, not a standard keyboard usage; LED mapping not verified",
+  "keys": [
+    {
+      "device_slot": 0,
+      "logical_code": "Escape",
+      "reference_keycode": 41
+    },
+    {
+      "device_slot": 1,
+      "logical_code": "F1",
+      "reference_keycode": 58
+    },
+    {
+      "device_slot": 2,
+      "logical_code": "F2",
+      "reference_keycode": 59
+    },
+    {
+      "device_slot": 3,
+      "logical_code": "F3",
+      "reference_keycode": 60
+    },
+    {
+      "device_slot": 4,
+      "logical_code": "F4",
+      "reference_keycode": 61
+    },
+    {
+      "device_slot": 5,
+      "logical_code": "F5",
+      "reference_keycode": 62
+    },
+    {
+      "device_slot": 6,
+      "logical_code": "F6",
+      "reference_keycode": 63
+    },
+    {
+      "device_slot": 7,
+      "logical_code": "F7",
+      "reference_keycode": 64
+    },
+    {
+      "device_slot": 8,
+      "logical_code": "F8",
+      "reference_keycode": 65
+    },
+    {
+      "device_slot": 9,
+      "logical_code": "F9",
+      "reference_keycode": 66
+    },
+    {
+      "device_slot": 10,
+      "logical_code": "F10",
+      "reference_keycode": 67
+    },
+    {
+      "device_slot": 11,
+      "logical_code": "F11",
+      "reference_keycode": 68
+    },
+    {
+      "device_slot": 12,
+      "logical_code": "F12",
+      "reference_keycode": 69
+    },
+    {
+      "device_slot": 99,
+      "logical_code": "PrintScreen",
+      "reference_keycode": 70
+    },
+    {
+      "device_slot": 104,
+      "logical_code": "Home",
+      "reference_keycode": 74
+    },
+    {
+      "device_slot": 107,
+      "logical_code": "End",
+      "reference_keycode": 77
+    },
+    {
+      "device_slot": 16,
+      "logical_code": "Backquote",
+      "reference_keycode": 53
+    },
+    {
+      "device_slot": 17,
+      "logical_code": "Digit1",
+      "reference_keycode": 30
+    },
+    {
+      "device_slot": 18,
+      "logical_code": "Digit2",
+      "reference_keycode": 31
+    },
+    {
+      "device_slot": 19,
+      "logical_code": "Digit3",
+      "reference_keycode": 32
+    },
+    {
+      "device_slot": 20,
+      "logical_code": "Digit4",
+      "reference_keycode": 33
+    },
+    {
+      "device_slot": 21,
+      "logical_code": "Digit5",
+      "reference_keycode": 34
+    },
+    {
+      "device_slot": 22,
+      "logical_code": "Digit6",
+      "reference_keycode": 35
+    },
+    {
+      "device_slot": 23,
+      "logical_code": "Digit7",
+      "reference_keycode": 36
+    },
+    {
+      "device_slot": 24,
+      "logical_code": "Digit8",
+      "reference_keycode": 37
+    },
+    {
+      "device_slot": 25,
+      "logical_code": "Digit9",
+      "reference_keycode": 38
+    },
+    {
+      "device_slot": 26,
+      "logical_code": "Digit0",
+      "reference_keycode": 39
+    },
+    {
+      "device_slot": 27,
+      "logical_code": "Minus",
+      "reference_keycode": 45
+    },
+    {
+      "device_slot": 28,
+      "logical_code": "Equal",
+      "reference_keycode": 46
+    },
+    {
+      "device_slot": 92,
+      "logical_code": "Backspace",
+      "reference_keycode": 42
+    },
+    {
+      "device_slot": 103,
+      "logical_code": "Insert",
+      "reference_keycode": 73
+    },
+    {
+      "device_slot": 105,
+      "logical_code": "PageUp",
+      "reference_keycode": 75
+    },
+    {
+      "device_slot": 32,
+      "logical_code": "Tab",
+      "reference_keycode": 43
+    },
+    {
+      "device_slot": 33,
+      "logical_code": "KeyQ",
+      "reference_keycode": 20
+    },
+    {
+      "device_slot": 34,
+      "logical_code": "KeyW",
+      "reference_keycode": 26
+    },
+    {
+      "device_slot": 35,
+      "logical_code": "KeyE",
+      "reference_keycode": 8
+    },
+    {
+      "device_slot": 36,
+      "logical_code": "KeyR",
+      "reference_keycode": 21
+    },
+    {
+      "device_slot": 37,
+      "logical_code": "KeyT",
+      "reference_keycode": 23
+    },
+    {
+      "device_slot": 38,
+      "logical_code": "KeyY",
+      "reference_keycode": 28
+    },
+    {
+      "device_slot": 39,
+      "logical_code": "KeyU",
+      "reference_keycode": 24
+    },
+    {
+      "device_slot": 40,
+      "logical_code": "KeyI",
+      "reference_keycode": 12
+    },
+    {
+      "device_slot": 41,
+      "logical_code": "KeyO",
+      "reference_keycode": 18
+    },
+    {
+      "device_slot": 42,
+      "logical_code": "KeyP",
+      "reference_keycode": 19
+    },
+    {
+      "device_slot": 43,
+      "logical_code": "BracketLeft",
+      "reference_keycode": 47
+    },
+    {
+      "device_slot": 44,
+      "logical_code": "BracketRight",
+      "reference_keycode": 48
+    },
+    {
+      "device_slot": 60,
+      "logical_code": "Backslash",
+      "reference_keycode": 49
+    },
+    {
+      "device_slot": 106,
+      "logical_code": "Delete",
+      "reference_keycode": 76
+    },
+    {
+      "device_slot": 108,
+      "logical_code": "PageDown",
+      "reference_keycode": 78
+    },
+    {
+      "device_slot": 48,
+      "logical_code": "CapsLock",
+      "reference_keycode": 57
+    },
+    {
+      "device_slot": 49,
+      "logical_code": "KeyA",
+      "reference_keycode": 4
+    },
+    {
+      "device_slot": 50,
+      "logical_code": "KeyS",
+      "reference_keycode": 22
+    },
+    {
+      "device_slot": 51,
+      "logical_code": "KeyD",
+      "reference_keycode": 7
+    },
+    {
+      "device_slot": 52,
+      "logical_code": "KeyF",
+      "reference_keycode": 9
+    },
+    {
+      "device_slot": 53,
+      "logical_code": "KeyG",
+      "reference_keycode": 10
+    },
+    {
+      "device_slot": 54,
+      "logical_code": "KeyH",
+      "reference_keycode": 11
+    },
+    {
+      "device_slot": 55,
+      "logical_code": "KeyJ",
+      "reference_keycode": 13
+    },
+    {
+      "device_slot": 56,
+      "logical_code": "KeyK",
+      "reference_keycode": 14
+    },
+    {
+      "device_slot": 57,
+      "logical_code": "KeyL",
+      "reference_keycode": 15
+    },
+    {
+      "device_slot": 58,
+      "logical_code": "Semicolon",
+      "reference_keycode": 51
+    },
+    {
+      "device_slot": 59,
+      "logical_code": "Quote",
+      "reference_keycode": 52
+    },
+    {
+      "device_slot": 76,
+      "logical_code": "Enter",
+      "reference_keycode": 40
+    },
+    {
+      "device_slot": 64,
+      "logical_code": "ShiftLeft",
+      "reference_keycode": 225
+    },
+    {
+      "device_slot": 65,
+      "logical_code": "KeyZ",
+      "reference_keycode": 29
+    },
+    {
+      "device_slot": 66,
+      "logical_code": "KeyX",
+      "reference_keycode": 27
+    },
+    {
+      "device_slot": 67,
+      "logical_code": "KeyC",
+      "reference_keycode": 6
+    },
+    {
+      "device_slot": 68,
+      "logical_code": "KeyV",
+      "reference_keycode": 25
+    },
+    {
+      "device_slot": 69,
+      "logical_code": "KeyB",
+      "reference_keycode": 5
+    },
+    {
+      "device_slot": 70,
+      "logical_code": "KeyN",
+      "reference_keycode": 17
+    },
+    {
+      "device_slot": 71,
+      "logical_code": "KeyM",
+      "reference_keycode": 16
+    },
+    {
+      "device_slot": 72,
+      "logical_code": "Comma",
+      "reference_keycode": 54
+    },
+    {
+      "device_slot": 73,
+      "logical_code": "Period",
+      "reference_keycode": 55
+    },
+    {
+      "device_slot": 74,
+      "logical_code": "Slash",
+      "reference_keycode": 56
+    },
+    {
+      "device_slot": 75,
+      "logical_code": "ShiftRight",
+      "reference_keycode": 229
+    },
+    {
+      "device_slot": 90,
+      "logical_code": "ArrowUp",
+      "reference_keycode": 82
+    },
+    {
+      "device_slot": 80,
+      "logical_code": "ControlLeft",
+      "reference_keycode": 224
+    },
+    {
+      "device_slot": 81,
+      "logical_code": "MetaLeft",
+      "reference_keycode": 227
+    },
+    {
+      "device_slot": 82,
+      "logical_code": "AltLeft",
+      "reference_keycode": 226
+    },
+    {
+      "device_slot": 83,
+      "logical_code": "Space",
+      "reference_keycode": 44
+    },
+    {
+      "device_slot": 84,
+      "logical_code": "AltRight",
+      "reference_keycode": 230
+    },
+    {
+      "device_slot": 85,
+      "logical_code": "-1",
+      "reference_keycode": 175
+    },
+    {
+      "device_slot": 87,
+      "logical_code": "ControlRight",
+      "reference_keycode": 228
+    },
+    {
+      "device_slot": 88,
+      "logical_code": "ArrowLeft",
+      "reference_keycode": 80
+    },
+    {
+      "device_slot": 89,
+      "logical_code": "ArrowDown",
+      "reference_keycode": 81
+    },
+    {
+      "device_slot": 91,
+      "logical_code": "ArrowRight",
+      "reference_keycode": 79
+    }
+  ]
+}

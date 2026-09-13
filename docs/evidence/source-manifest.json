@@ -1,0 +1,29 @@
+{
+  "retrieved_date": "2026-09-13",
+  "page": "https://web.io.vision/advanced-keys",
+  "method": "direct HTTP read; static analysis; no downloaded JavaScript executed",
+  "sources": [
+    {
+      "url": "https://web.io.vision/assets/layout-classic-DXDjowst.js",
+      "local_archive": "archive_data/vendor_site/2026-09-13/layout-classic-DXDjowst.js",
+      "bytes": 817972,
+      "sha256": "34c756a1a455bf2bf497e667ef9c2245be7a683c17108b4ab0f727440dac18da"
+    },
+    {
+      "url": "https://web.io.vision/assets/main-CnGPaz9A.js",
+      "local_archive": "archive_data/vendor_site/2026-09-13/main-CnGPaz9A.js",
+      "bytes": 2113,
+      "sha256": "7db1613bcdeaeb472d5b9a81797b3a7f4cbfeccae1303b9518fc74b6e8e15aeb"
+    },
+    {
+      "url": "https://web.io.vision/assets/vendor-n6JO6zlV.js",
+      "local_archive": "archive_data/vendor_site/2026-09-13/vendor-n6JO6zlV.js",
+      "bytes": 1313802,
+      "sha256": "4e5fa4155d42588a8f67745bd3d16f3804cff64d9a1ac77162f856c5f27aeec6"
+    }
+  ],
+  "reference": {
+    "repository": "https://github.com/AureTrix-Solutions/AureTrix_driver",
+    "commit": "bdcfca2f30df45ec4348c2d52f1aca52a7e594fc"
+  }
+}
