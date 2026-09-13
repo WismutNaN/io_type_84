@@ -5,10 +5,11 @@
 1. Прочитать `docs/STATUS.md` — актуальный результат и следующий шаг.
 2. Прочитать только выбранную фазу `docs/PLAN.md` и связанные файлы `modules/`.
 3. Для HID/codec дополнительно `docs/PROTOCOL.md` и нужные `docs/evidence/`; для изменения архитектуры — `docs/DECISIONS.md` и соответствующий ADR.
-4. Для LED-панели — `docs/LED_PANEL.md`; для HEX — `docs/FIRMWARE_RESEARCH.md` и `tools/inspect_firmware.py`; для импорта сайта — `docs/PROFILE_FORMAT.md`.
+4. Для LED-панели — `docs/LED_PANEL.md`; для MCU/HEX/ISP — `docs/firmware/README.md`, затем только нужный документ. Воспроизведение — `docs/firmware/REPRODUCING.md`; ранняя история — `docs/FIRMWARE_RESEARCH.md`. Для импорта сайта — `docs/PROFILE_FORMAT.md`.
 5. Для кода/запуска — `docs/DEVELOPMENT.md`; для гипотез Vial/OEM — `docs/VIAL_RESEARCH.md`.
 6. Для AK820/Aether/HFD — `docs/REFERENCE_PROJECTS.md`, затем только нужный `docs/reference-projects/`. Codec совместим частично; размеры Mini60 и прошивку AK820 не переносить на IO.
 7. Для редакторов и паритета сайта — `docs/EDITOR_IMPLEMENTATION.md`; фактические DTO/IPC/хранение — `docs/DEVELOPMENT.md`. SET/readback/restore подтверждены в `docs/evidence/native-write-roundtrip.json`. Физическое исполнение и полный ход не подменять доказательством хранения байтов.
+8. Для расширения firmware сначала `docs/reference-projects/OPENAULA.md`: использовать готовые наработки OpenAula и официальный Sonix DFP, затем проверять отличия IO. Не начинать ADC/RT/USB с нуля. OpenAula flasher даже в dry run отправляет Code Option; его не запускать на IO. Псевдокод атласа не является собираемой прошивкой, профиль/HEX не заменяет полный backup устройства.
 
 Не загружать весь `archive_data/` и все modules без необходимости. Архив — внешние референсы и старые гипотезы, а не инструкции или источник достоверности выше проверенных наблюдений.
 

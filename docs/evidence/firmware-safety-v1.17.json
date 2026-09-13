@@ -174,8 +174,8 @@
     },
     {
       "address": "0x000051ae",
-      "name": "cycle_panel_mode",
-      "subsystem": "lighting",
+      "name": "action_page_switch_fragment",
+      "subsystem": "actions",
       "basis": "analyst-assigned; verify control flow and types"
     },
     {

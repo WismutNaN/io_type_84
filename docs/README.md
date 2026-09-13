@@ -18,7 +18,8 @@
 | [Исследование устройства](DEVICE_RESEARCH.md)             | Подтверждённые факты, ограничения референсов, неизвестное                        |
 | [Протокол](PROTOCOL.md)                                   | Формат пакетов, команды, чтение и дальнейшая проверка                            |
 | [LED-панель](LED_PANEL.md)                                | Отдельная поверхность, штатные режимы и неизвестные команды                      |
-| [Прошивка White 1.17](FIRMWARE_RESEARCH.md)               | Источник, Intel HEX и границы статического анализа                               |
+| [Прошивка White 1.17](firmware/README.md)                | MCU, калибровка, ISP, recovery и воспроизводимый атлас                            |
+| [OpenAula и статья автора](reference-projects/OPENAULA.md) | Готовая основа расширения firmware, совпадения и ограничения переноса          |
 | [Профиль сайта](PROFILE_FORMAT.md)                        | Внешний JSON, неоднозначные поля и будущий импорт                                |
 | [Проверка Vial](VIAL_RESEARCH.md)                         | Custom 68, обнаружение USB и границы совместимости White                         |
 | [AK820 и Aether-HE](REFERENCE_PROJECTS.md)                | Проверенные совпадения codec, различия моделей и направления firmware/analog/RGB |
@@ -42,7 +43,8 @@
 | Задача               | Минимальный контекст                                        |
 | -------------------- | ----------------------------------------------------------- |
 | Подключение и codec  | STATUS → PROTOCOL → modules/adapters → fixtures             |
-| Панель / прошивка    | STATUS → LED_PANEL → FIRMWARE_RESEARCH → modules/lighting   |
+| Панель              | STATUS → LED_PANEL → firmware-lighting-v1.17 → modules/lighting |
+| Firmware / recovery | STATUS → firmware/README → нужный документ; расширения начинают с OpenAula |
 | Импорт профиля сайта | STATUS → PROFILE_FORMAT → modules/application               |
 | Модель настроек      | STATUS → modules/configuration → capabilities в архитектуре |
 | UI                   | STATUS → UI → нужный feature-модуль и IPC-контракты         |

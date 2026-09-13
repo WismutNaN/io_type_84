@@ -37,7 +37,7 @@ SYMBOLS = {
     0x3AA8: ('process_magnetic_sample', 'analog'),
     0x41CC: ('initialize_runtime_from_flash', 'boot'),
     0x4F60: ('service_boot_and_deferred_writes', 'boot'),
-    0x51AE: ('cycle_panel_mode', 'lighting'),
+    0x51AE: ('action_page_switch_fragment', 'actions'),
     0x54C4: ('persist_panel_and_options', 'lighting'),
     0x6C14: ('filter_adc_float', 'analog'),
     0xD7C4: ('dispatch_vendor_aa55', 'usb'),
