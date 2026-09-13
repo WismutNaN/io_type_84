@@ -1,0 +1,1030 @@
+{
+  "schemaVersion": 1,
+  "method": "offline-static-analysis",
+  "hardwareAccess": false,
+  "firmwareSha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "mappedHexBytes": 90728,
+  "canonicalPayload": {
+    "length": 516096,
+    "holeFill": 0,
+    "sha256": "0a2b5c43407c12a15539ccb094ea05a93fdfa788dacf6839498987622e352dfe",
+    "sum16LittleEndian": 39918,
+    "notADeviceBackup": true
+  },
+  "ispEntry": {
+    "magicLiteralAt": "0x0000f4f4",
+    "magic": "aa 55 a5 5a ff 00 33 cc",
+    "callback": "0x0001376c",
+    "flagAddress": "0x2000006c",
+    "flagMask": 16,
+    "consumer": "0x00004f60",
+    "jumpRoutine": "0x000001d8",
+    "bootRomThumbTarget": "0x200301",
+    "userModeFlagAddress": "0x0007dffc",
+    "userModeFlagValue": "0xaaaa5555"
+  },
+  "calibration": {
+    "countPerTable": 128,
+    "maxFlash": "0x8400",
+    "minFlash": "0x8500",
+    "maxRam": "0x2000353a",
+    "minRam": "0x2000363a",
+    "maxValues": {
+      "2200": 128
+    },
+    "minValues": {
+      "1900": 128
+    },
+    "minStatusMask": "0x8000",
+    "minAdcMask": "0x7fff",
+    "stopCommand": "0x65",
+    "stopCallsPersistAt": "0xdb1a",
+    "persistFunction": "0x1930",
+    "flashWriter": "0x3630",
+    "pageBytesObservedInAppWriter": 512,
+    "sameErasePage": true,
+    "uniqueUnitValuesAcquired": false
+  },
+  "symbols": [
+    {
+      "address": "0x000001d8",
+      "name": "enter_boot_rom",
+      "subsystem": "boot",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00000204",
+      "name": "reset_entry",
+      "subsystem": "boot",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000003a4",
+      "name": "usb_hs_interrupt",
+      "subsystem": "usb",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00000bf0",
+      "name": "emit_analog_fb",
+      "subsystem": "analog",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00001464",
+      "name": "fmc_page_erase_request",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000015c8",
+      "name": "fmc_mass_erase_request",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000172c",
+      "name": "fmc_page_program_request",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000018d8",
+      "name": "fmc_wait_status",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00001930",
+      "name": "finish_calibration_and_persist",
+      "subsystem": "calibration",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00001f30",
+      "name": "flash_erase_dispatch",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00001ff8",
+      "name": "flash_program_dispatch",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00002188",
+      "name": "watchdog_stop",
+      "subsystem": "runtime",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000221c",
+      "name": "watchdog_reload",
+      "subsystem": "runtime",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00002274",
+      "name": "initialize_flash_remap_offset",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00003608",
+      "name": "update_calibration_min_ram",
+      "subsystem": "calibration",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00003630",
+      "name": "flash_patch_pages",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000372c",
+      "name": "flash_range_check_stub",
+      "subsystem": "flash",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00003738",
+      "name": "dispatch_firmware_action",
+      "subsystem": "actions",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00003aa8",
+      "name": "process_magnetic_sample",
+      "subsystem": "analog",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000041cc",
+      "name": "initialize_runtime_from_flash",
+      "subsystem": "boot",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00004f60",
+      "name": "service_boot_and_deferred_writes",
+      "subsystem": "boot",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000051ae",
+      "name": "cycle_panel_mode",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x000054c4",
+      "name": "persist_panel_and_options",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00006c14",
+      "name": "filter_adc_float",
+      "subsystem": "analog",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000d7c4",
+      "name": "dispatch_vendor_aa55",
+      "subsystem": "usb",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000e540",
+      "name": "render_panel",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000eb60",
+      "name": "render_panel_depth",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000eea0",
+      "name": "render_panel_depth_overlay",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000f4d8",
+      "name": "matches_isp_magic",
+      "subsystem": "boot",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0000f8e0",
+      "name": "service_periodic_work",
+      "subsystem": "runtime",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x00013028",
+      "name": "compose_lighting_output",
+      "subsystem": "lighting",
+      "basis": "analyst-assigned; verify control flow and types"
+    },
+    {
+      "address": "0x0001376c",
+      "name": "usb_report_callback",
+      "subsystem": "usb",
+      "basis": "analyst-assigned; verify control flow and types"
+    }
+  ],
+  "sdk": {
+    "package": "SONiX.SN34F2_DFP.2.0.4",
+    "files": {
+      "Device\\Source\\ARM\\startup_SN34F280.s": "f122dbdc75185aca88e315f38b21a1c1542860a41ddef9fbdc3cb7d068468223",
+      "Device\\Include\\SN34F280.h": "3038f63bfb6fd2bf4c58ca529d678542c512e8876105a683c2cbada8a8b9bf8f",
+      "SVD\\SN34F280.svd": "db1e2fb7c398b2529502bc718598c6fca296b5926898eaa5fab979c46aa1f8b2"
+    },
+    "vectorSlots": [
+      {
+        "offset": "0x0",
+        "sdkName": "__initial_sp",
+        "thumbTarget": "0x20007e48"
+      },
+      {
+        "offset": "0x4",
+        "sdkName": "Reset_Handler",
+        "thumbTarget": "0x205"
+      },
+      {
+        "offset": "0x8",
+        "sdkName": "NMI_Handler",
+        "thumbTarget": "0x21b"
+      },
+      {
+        "offset": "0xc",
+        "sdkName": "HardFault_Handler",
+        "thumbTarget": "0x3151"
+      },
+      {
+        "offset": "0x10",
+        "sdkName": "MemManage_Handler",
+        "thumbTarget": "0x21f"
+      },
+      {
+        "offset": "0x14",
+        "sdkName": "BusFault_Handler",
+        "thumbTarget": "0x221"
+      },
+      {
+        "offset": "0x18",
+        "sdkName": "UsageFault_Handler",
+        "thumbTarget": "0x223"
+      },
+      {
+        "offset": "0x1c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x20",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x24",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x28",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x2c",
+        "sdkName": "SVC_Handler",
+        "thumbTarget": "0x225"
+      },
+      {
+        "offset": "0x30",
+        "sdkName": "DebugMon_Handler",
+        "thumbTarget": "0x227"
+      },
+      {
+        "offset": "0x34",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x38",
+        "sdkName": "PendSV_Handler",
+        "thumbTarget": "0x229"
+      },
+      {
+        "offset": "0x3c",
+        "sdkName": "SysTick_Handler",
+        "thumbTarget": "0x8ff9"
+      },
+      {
+        "offset": "0x40",
+        "sdkName": "WWDT_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x44",
+        "sdkName": "LVD_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x48",
+        "sdkName": "WDT_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x4c",
+        "sdkName": "SCU_IRQHandler",
+        "thumbTarget": "0xf415"
+      },
+      {
+        "offset": "0x50",
+        "sdkName": "FLASH_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x54",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x58",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x5c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x60",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x64",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x68",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x6c",
+        "sdkName": "DMA0_CH0_IRQHandler",
+        "thumbTarget": "0x127d"
+      },
+      {
+        "offset": "0x70",
+        "sdkName": "DMA0_CH1_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x74",
+        "sdkName": "DMA0_CH2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x78",
+        "sdkName": "DMA0_CH3_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x7c",
+        "sdkName": "DMA0_CH4_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x80",
+        "sdkName": "DMA0_CH5_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x84",
+        "sdkName": "DMA0_CH6_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x88",
+        "sdkName": "ADC0_IRQHandler",
+        "thumbTarget": "0x6d5"
+      },
+      {
+        "offset": "0x8c",
+        "sdkName": "CAN0_TX_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x90",
+        "sdkName": "CAN0_RX_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x94",
+        "sdkName": "CAN0_TT_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x98",
+        "sdkName": "CAN0_EW_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x9c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xa0",
+        "sdkName": "CT16B0_IRQHandler",
+        "thumbTarget": "0xe9d"
+      },
+      {
+        "offset": "0xa4",
+        "sdkName": "CT16B8_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xa8",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xac",
+        "sdkName": "CT16B3_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xb0",
+        "sdkName": "CT16B2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xb4",
+        "sdkName": "CT16B5_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xb8",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xbc",
+        "sdkName": "I2C0_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xc0",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xc4",
+        "sdkName": "I2C1_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xc8",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xcc",
+        "sdkName": "SPI0_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xd0",
+        "sdkName": "SPI1_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xd4",
+        "sdkName": "UART0_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xd8",
+        "sdkName": "UART1_IRQHandler",
+        "thumbTarget": "0xf9dd"
+      },
+      {
+        "offset": "0xdc",
+        "sdkName": "UART2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xe0",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xe4",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xe8",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xec",
+        "sdkName": "CT16B4_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0xf0",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xf4",
+        "sdkName": "CT16B1_IRQHandler",
+        "thumbTarget": "0xead"
+      },
+      {
+        "offset": "0xf8",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0xfc",
+        "sdkName": "DMA0_CH7_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x100",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x104",
+        "sdkName": "SDIO_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x108",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x10c",
+        "sdkName": "SPI2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x110",
+        "sdkName": "UART3_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x114",
+        "sdkName": "UART4_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x118",
+        "sdkName": "CT16B6_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x11c",
+        "sdkName": "CT16B7_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x120",
+        "sdkName": "DMA1_CH0_IRQHandler",
+        "thumbTarget": "0x128d"
+      },
+      {
+        "offset": "0x124",
+        "sdkName": "DMA1_CH1_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x128",
+        "sdkName": "DMA1_CH2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x12c",
+        "sdkName": "DMA1_CH3_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x130",
+        "sdkName": "DMA1_CH4_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x134",
+        "sdkName": "ETH_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x138",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x13c",
+        "sdkName": "CAN1_TX_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x140",
+        "sdkName": "CAN1_RX_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x144",
+        "sdkName": "CAN1_TT_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x148",
+        "sdkName": "CAN1_EW_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x14c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x150",
+        "sdkName": "DMA1_CH5_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x154",
+        "sdkName": "DMA1_CH6_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x158",
+        "sdkName": "DMA1_CH7_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x15c",
+        "sdkName": "UART5_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x160",
+        "sdkName": "I2C2_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x164",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x168",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x16c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x170",
+        "sdkName": "USB_HS_WKUP_IRQHandler",
+        "thumbTarget": "0x11265"
+      },
+      {
+        "offset": "0x174",
+        "sdkName": "USB_HS_IRQHandler",
+        "thumbTarget": "0x1125d"
+      },
+      {
+        "offset": "0x178",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x17c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x180",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x184",
+        "sdkName": "FPU_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x188",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x18c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x190",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x194",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x198",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x19c",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x1a0",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x1a4",
+        "sdkName": "0",
+        "thumbTarget": "0x0"
+      },
+      {
+        "offset": "0x1a8",
+        "sdkName": "LCM_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x1ac",
+        "sdkName": "ETH_WOL_IRQHandler",
+        "thumbTarget": "0x22d"
+      },
+      {
+        "offset": "0x1b0",
+        "sdkName": "GPIO3_IRQHandler",
+        "thumbTarget": "0x1a9d"
+      },
+      {
+        "offset": "0x1b4",
+        "sdkName": "GPIO2_IRQHandler",
+        "thumbTarget": "0x1a8d"
+      },
+      {
+        "offset": "0x1b8",
+        "sdkName": "GPIO1_IRQHandler",
+        "thumbTarget": "0x1a7d"
+      },
+      {
+        "offset": "0x1bc",
+        "sdkName": "GPIO0_IRQHandler",
+        "thumbTarget": "0x1a6d"
+      }
+    ],
+    "peripheralLiteralCandidates": [
+      {
+        "name": "SN_FLASH",
+        "base": "0x601000",
+        "literalCandidates": [
+          "0x1334",
+          "0x136c",
+          "0x13a4",
+          "0x140c",
+          "0x1460",
+          "0x14b4",
+          "0x14e8",
+          "0x1508",
+          "0x154c",
+          "0x1594",
+          "0x15f4",
+          "0x1648",
+          "0x169c",
+          "0x16f0",
+          "0x1728",
+          "0x1780",
+          "0x17dc",
+          "0x1830",
+          "0x1894",
+          "0x18c0",
+          "0x18d0",
+          "0x192c"
+        ]
+      },
+      {
+        "name": "SN_ALWAYSON",
+        "base": "0x4001b000",
+        "literalCandidates": [
+          "0x2bdc"
+        ]
+      },
+      {
+        "name": "SN_SCU",
+        "base": "0x4001f000",
+        "literalCandidates": [
+          "0x234",
+          "0x380",
+          "0x1180",
+          "0x1c50",
+          "0x1ccc",
+          "0x2214",
+          "0x22a4",
+          "0x261c",
+          "0x26fc",
+          "0x2738",
+          "0x275c",
+          "0x28bc",
+          "0x2be4",
+          "0x2d68",
+          "0x2dbc",
+          "0x2f50",
+          "0x32f8",
+          "0xd7b4",
+          "0xf2f8",
+          "0xf33c",
+          "0xf42c",
+          "0x12fe4",
+          "0x13974"
+        ]
+      },
+      {
+        "name": "SN_CT16B0",
+        "base": "0x40020000",
+        "literalCandidates": [
+          "0x2f48",
+          "0x1219c"
+        ]
+      },
+      {
+        "name": "SN_CT16B2",
+        "base": "0x40022000",
+        "literalCandidates": [
+          "0x122c0"
+        ]
+      },
+      {
+        "name": "SN_ADC0",
+        "base": "0x40027000",
+        "literalCandidates": [
+          "0x820",
+          "0x1194"
+        ]
+      },
+      {
+        "name": "SN_SPI0",
+        "base": "0x4002a000",
+        "literalCandidates": [
+          "0x11d28"
+        ]
+      },
+      {
+        "name": "SN_GPIO0",
+        "base": "0x40037000",
+        "literalCandidates": [
+          "0x118c",
+          "0x1a78",
+          "0x2c3c",
+          "0x4178",
+          "0x41bc",
+          "0x55e4",
+          "0x11a48"
+        ]
+      },
+      {
+        "name": "SN_DMA0",
+        "base": "0x40053000",
+        "literalCandidates": [
+          "0x1bf4",
+          "0x1c4c",
+          "0x1cc4"
+        ]
+      },
+      {
+        "name": "SN_DMA1",
+        "base": "0x40054000",
+        "literalCandidates": [
+          "0x1c54",
+          "0x1cd0",
+          "0x13914"
+        ]
+      },
+      {
+        "name": "SN_USB_HS",
+        "base": "0x40057000",
+        "literalCandidates": [
+          "0x668",
+          "0x1250c",
+          "0x125c8",
+          "0x130d4",
+          "0x13108",
+          "0x13174",
+          "0x131f0",
+          "0x13264",
+          "0x13368",
+          "0x13454",
+          "0x134b4",
+          "0x135bc",
+          "0x1361c",
+          "0x13714"
+        ]
+      },
+      {
+        "name": "SN_CT16B1",
+        "base": "0x40021000",
+        "literalCandidates": [
+          "0xeb8",
+          "0x2f54"
+        ]
+      },
+      {
+        "name": "SN_GPIO1",
+        "base": "0x40038000",
+        "literalCandidates": [
+          "0xd08",
+          "0x1a88",
+          "0x2c40",
+          "0x2d6c",
+          "0x2db8",
+          "0x34ac",
+          "0x34c4",
+          "0x417c",
+          "0x41c0",
+          "0x5b40",
+          "0xf454",
+          "0x1147c",
+          "0x11a4c"
+        ]
+      },
+      {
+        "name": "SN_GPIO2",
+        "base": "0x40039000",
+        "literalCandidates": [
+          "0x1188",
+          "0x1a98",
+          "0x32f4",
+          "0x4180",
+          "0x41c4",
+          "0x11a50"
+        ]
+      },
+      {
+        "name": "SN_GPIO3",
+        "base": "0x4003a000",
+        "literalCandidates": [
+          "0x1190",
+          "0x1aa8",
+          "0x2be0",
+          "0x2c44",
+          "0x4184",
+          "0x41c8",
+          "0x55e8"
+        ]
+      },
+      {
+        "name": "SN_SPI1",
+        "base": "0x4002b000",
+        "literalCandidates": [
+          "0x2d64",
+          "0x2db4",
+          "0x11d30",
+          "0x1394c"
+        ]
+      },
+      {
+        "name": "SN_UART1",
+        "base": "0x40011000",
+        "literalCandidates": [
+          "0xfa28"
+        ]
+      }
+    ],
+    "footerDocumentedAsUserModeFlag": true
+  },
+  "atlasFunctionCandidates": 436
+}

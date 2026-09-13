@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-14",
+  "hardwareAccess": false,
+  "sources": [
+    {
+      "id": "io-white-hex",
+      "url": "https://web.io.vision/IO_Type_84_Magnetic_White_V1.17.hex",
+      "localPath": "archive_data/firmware/2026-09-13/IO_Type_84_Magnetic_White_V1.17.hex",
+      "bytes": 255277,
+      "sha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45"
+    },
+    {
+      "id": "isp-wasm",
+      "url": "https://web.io.vision/assets/sn_isp_lib_bg-DOswDDJh.wasm",
+      "localPath": "archive_data/firmware_research/2026-09-14/sn_isp_lib_bg-DOswDDJh.wasm",
+      "bytes": 80442,
+      "sha256": "8816f7c9a112265943f0137d1d54b4c9fc13d87850803918d5e53a9569aacba6"
+    },
+    {
+      "id": "manifest",
+      "url": "https://web.io.vision/update.json",
+      "localPath": "archive_data/firmware_research/2026-09-14/update.json",
+      "bytes": 3060,
+      "sha256": "e744452908f742f02afa34e279ab834f6d7654dd4c5e41772904d58d5b0f2436"
+    },
+    {
+      "id": "sonix-dfp",
+      "url": "https://liveupdate.sonix.com.tw/sonix/develop_tool/MCU/DFP/SONiX.SN34F2_DFP.2.0.4.pack",
+      "localPath": "archive_data/firmware_research/2026-09-14/SONiX.SN34F2_DFP.2.0.4.pack",
+      "bytes": 1921869,
+      "sha256": "5b976497879b608410be3481014e6e9af68dec4392207e3e535d2e227ce40d97"
+    },
+    {
+      "id": "sonix-package-index",
+      "url": "https://liveupdate.sonix.com.tw/sonix/develop_tool/MCU/DFP/SONiX.SN34F2_DFP.pdsc",
+      "localPath": "archive_data/firmware_research/2026-09-14/SONiX.SN34F2_DFP.pdsc",
+      "bytes": 9998,
+      "sha256": "2844a8f4638aa46882d9846b61e5e34bc886ffdd9e2f259289415b152b019a22"
+    },
+    {
+      "id": "ghidra",
+      "url": "https://github.com/NationalSecurityAgency/ghidra/releases/tag/Ghidra_12.1.3_build",
+      "localPath": "archive_data/firmware_research/2026-09-14/ghidra_12.1.3_PUBLIC_20260817.zip",
+      "bytes": 569445154,
+      "sha256": "93a5d11a9ad510622acaaf908c556a7b9b764d338e78a7567f3689bf5081fd54"
+    },
+    {
+      "id": "jdk",
+      "url": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.12.1%2B1",
+      "localPath": "archive_data/firmware_research/2026-09-14/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip",
+      "bytes": 205073461,
+      "sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e"
+    },
+    {
+      "id": "wabt",
+      "url": "https://github.com/WebAssembly/wabt/releases/tag/1.0.41",
+      "localPath": "archive_data/firmware_research/2026-09-14/wabt-1.0.41-windows-x64.tar.gz",
+      "bytes": 5410214,
+      "sha256": "37285ec7244384ffd382841f93fd23335aae846c92016a132d765c60f27a2f31"
+    }
+  ],
+  "openaula": {
+    "url": "https://github.com/cvanelteren/OpenAula",
+    "commit": "fc3a9200bffd62ac91ca3bf5b3aac56a906a530a",
+    "codeExecuted": false,
+    "article": "https://thefriendlyghost.nl/aula-mini-60-he-pro",
+    "articleDate": "2026-06-27",
+    "articleAndRepositoryAreSameResearch": true,
+    "files": {
+      "tools/flash_iface3.py": "67957db5891ffcff9038898f88c387eb791747e5ba06462ad4b4bc5ced600f59",
+      "tools/patches/make_layer_overlay_patch.py": "3a572db584319611d9551a167ab5445f6352332368d1b12b1a8877316ed7f100",
+      "tools/patches/layer_overlay/layer_overlay.c": "8e1e0b2907b0132ae75f0210da3d831c76e77594290926a12acbd5b8ade34836",
+      "docs/HE_ALGORITHM.md": "3c063663be95e44fbacc5d697cee95e22abe0796b0d813a83e67d75c30596a4d",
+      "docs/FIRMWARE.md": "1b7cb825110f625ad9bbc30e65185336a471c29f9de438725672004882107571",
+      "LEGAL.md": "7916559eb2dbd201641a5d9d7c708cacbee56371d8066f90be2bf8fd68245cad"
+    }
+  }
+}
