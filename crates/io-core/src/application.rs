@@ -6,6 +6,7 @@ use ts_rs::{Config, TS};
 #[serde(rename_all = "camelCase")]
 pub enum DeviceAccess {
     NotImplemented,
+    Available,
 }
 
 /// Ответ проверки связи между оболочкой и Rust.
@@ -21,11 +22,13 @@ pub struct AppInfo {
 /// Единственный источник TypeScript-типов для существующего IPC.
 pub fn typescript_contracts() -> String {
     let config = Config::default();
-    format!(
+    let mut declarations = format!(
         "// Сгенерировано из io-core. Обновить: npm run contracts\n\nexport {}\n\nexport {}\n",
         DeviceAccess::decl(&config),
         AppInfo::decl(&config),
-    )
+    );
+    declarations.push_str(&crate::keyboard::typescript_contracts(&config));
+    declarations
 }
 
 #[cfg(test)]

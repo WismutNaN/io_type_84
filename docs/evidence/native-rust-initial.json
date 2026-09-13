@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-09-13",
+  "method": "Native Rust hidapi 2.6.7 on IO White 1.17",
+  "snapshotKeys": 128,
+  "snapshotRevisionBefore": "01c60666f303a9f67b4a13011f9f870b766774569301d99e36171786d9f68f18",
+  "snapshotRevisionAfter": "01c60666f303a9f67b4a13011f9f870b766774569301d99e36171786d9f68f18",
+  "configurationUnchanged": true,
+  "currentRgb": "GET 33 reply exactly echoed 128 LED query records; inconclusive",
+  "simulation": {
+    "durationSeconds": 20,
+    "packets": 19833,
+    "distinctSlots": 2,
+    "maxTravelUm": 180,
+    "peakHistoryTravelUm": 180,
+    "stopSent": true,
+    "fullPressVerified": false
+  }
+}

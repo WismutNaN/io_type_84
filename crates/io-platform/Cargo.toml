@@ -6,6 +6,10 @@ publish.workspace = true
 
 [dependencies]
 io-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+hidapi = "2.6.7"
+sha2 = "0.10"
 
 [lints]
 workspace = true
