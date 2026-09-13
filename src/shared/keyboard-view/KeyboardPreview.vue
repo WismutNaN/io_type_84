@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { t, mm } from '../ui/preferences';
+import { computerActions } from '../../features/editor/computer-rules';
+import type { DepthRule } from '../contracts/generated';
 import { keyboardKeys, keyboardBounds } from './layout';
 import type { KeyboardSnapshot, MonitorFrame } from '../contracts/generated';
 import { hexColor, bindingName } from '../../features/editor/model';
 import { physicalKeyCodes } from './keycodes';
 const props = defineProps<{
   selected: number[];
+  rules?: DepthRule[];
   snapshot: KeyboardSnapshot | null;
   live: MonitorFrame;
   view: 'layout' | 'travel' | 'colors';
@@ -39,31 +43,83 @@ function customBinding(slot: number) {
     !(b.page === 2 && b.parameters[0] === 0 && b.parameters[1] === physicalKeyCodes[slot])
   );
 }
-</script>
 
+function actionLabel(slot: number, original: string) {
+  const b = props.snapshot?.keys[slot]?.[props.functionLayer ? 'function' : 'base'];
+  if (!customBinding(slot)) return original;
+  const name = t(bindingName(b, original));
+  return (
+    (
+      {
+        'Page Up': 'PgUp',
+        'Page Down': 'PgDn',
+        'Print Screen': 'Print',
+        'Scroll Lock': 'Scroll',
+        'Caps Lock': 'Caps',
+      } as Record<string, string>
+    )[name] ?? name
+  );
+}
+function deepLabel(slot: number) {
+  const r = props.rules?.find((r) => r.slot === slot);
+  return r ? computerActions.find((a) => a.id === r.action)?.short : null;
+}
+function navigate(event: KeyboardEvent, slot: number) {
+  const key = keyboardKeys.find((k) => k.slot === slot)!;
+  const direction = event.key;
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(direction)) return;
+  event.preventDefault();
+  const candidates = keyboardKeys.filter((k) =>
+    direction === 'ArrowLeft'
+      ? k.x < key.x && k.y === key.y
+      : direction === 'ArrowRight'
+        ? k.x > key.x && k.y === key.y
+        : direction === 'ArrowUp'
+          ? k.y < key.y
+          : k.y > key.y,
+  );
+  candidates.sort(
+    (a, b) =>
+      Math.abs(a.y - key.y) * 10 +
+      Math.abs(a.x - key.x) -
+      Math.abs(b.y - key.y) * 10 -
+      Math.abs(b.x - key.x),
+  );
+  if (candidates[0]) {
+    const next = candidates[0].slot;
+    (event.currentTarget as HTMLElement).parentElement
+      ?.querySelector<HTMLButtonElement>(`[data-slot="${next}"]`)
+      ?.focus();
+  }
+}
+</script>
 <template>
   <div class="keyboard-preview">
     <div class="keyboard-case">
-      <div class="case-top">
-        <span>io <b>TYPE 84</b></span
-        ><span class="panel-marker" title="Геометрия и протокол LED-панели ещё исследуются"
-          >LED-панель <i></i><i></i><i></i><i></i><i></i
-        ></span>
-      </div>
       <div class="keyboard-scroll">
         <div
           class="keyboard-board"
           :style="{ aspectRatio: `${keyboardBounds.width} / ${keyboardBounds.height}` }"
-          aria-label="Раскладка IO Type 84"
+          :aria-label="t('Раскладка IO Type 84')"
         >
+          <div
+            class="led-panel"
+            :title="t('LED-панель · прямое управление исследуется')"
+            role="img"
+            :aria-label="t('LED-панель')"
+          >
+            <span v-for="n in 12" :key="n"></span>
+          </div>
           <button
             v-for="key in keyboardKeys"
             :key="key.slot"
+            :data-slot="key.slot"
             class="keycap"
             :class="{
               selected: selected.includes(key.slot),
               pressed: (depth(key.slot) ?? 0) >= 300,
-              measured: view === 'travel' && depth(key.slot) !== null,
+              custom: customBinding(key.slot),
+              'has-depth-action': deepLabel(key.slot),
             }"
             :style="{
               left: `${(key.x / keyboardBounds.width) * 100}%`,
@@ -73,49 +129,40 @@ function customBinding(slot: number) {
               '--travel': `${Math.min((depth(key.slot) ?? 0) / 3200, 1) * 100}%`,
               '--key-color': color(key.slot) ?? 'transparent',
             }"
-            :aria-label="`${key.label}${depth(key.slot) !== null ? `, ход ${((depth(key.slot) ?? 0) / 1000).toFixed(2)} мм` : ''}`"
             :aria-pressed="selected.includes(key.slot)"
-            :title="
-              bindingName(
-                snapshot?.keys[key.slot]?.[functionLayer ? 'function' : 'base'],
-                key.label,
-              )
-            "
+            :aria-label="`${key.label}: ${actionLabel(key.slot, key.label)}${deepLabel(key.slot) ? ', ' + t('Глубокое нажатие') + ': ' + deepLabel(key.slot) : ''}`"
+            :title="`${actionLabel(key.slot, key.label)}${depth(key.slot) !== null ? ' · ' + mm(depth(key.slot)!) + ' ' + t('мм') : ''}`"
             @pointerdown.prevent="
               emit('select', key.slot, $event.ctrlKey || $event.metaKey || multi)
             "
             @pointerenter="$event.buttons === 1 && emit('select', key.slot, true, true)"
             @keydown.space.prevent="emit('select', key.slot, true)"
             @keydown.enter.prevent="emit('select', key.slot, false)"
+            @keydown="navigate($event, key.slot)"
           >
-            <span v-if="view === 'travel'" class="key-measure">{{
-              depth(key.slot) === null ? '—' : ((depth(key.slot) ?? 0) / 1000).toFixed(2)
-            }}</span>
-            <span class="key-label">{{ key.label === 'Space' ? 'Space' : key.label }}</span>
-            <span v-if="view === 'layout' && customBinding(key.slot)" class="key-binding">{{
-              bindingName(
-                snapshot?.keys[key.slot]?.[functionLayer ? 'function' : 'base'],
-                key.label,
-              )
+            <span class="physical-legend" v-if="customBinding(key.slot)">{{ key.label }}</span>
+            <span class="key-label">{{ actionLabel(key.slot, key.label) }}</span>
+            <span v-if="deepLabel(key.slot)" class="key-binding">↓ {{ deepLabel(key.slot) }}</span>
+            <span v-if="view === 'travel' && !deepLabel(key.slot)" class="key-measure">{{
+              depth(key.slot) === null ? '—' : mm(depth(key.slot)!)
             }}</span>
             <span
               v-if="view === 'colors'"
               class="key-color"
               :class="{ unknown: !color(key.slot) }"
             ></span>
-            <span v-if="view === 'travel'" class="key-travel-fill"></span>
+            <span v-if="live.active" class="key-travel-track"
+              ><span class="key-travel-fill"></span
+            ></span>
           </button>
         </div>
       </div>
     </div>
     <div class="keyboard-legend">
       <span
-        ><i class="legend-selected"></i>Выбор <i class="legend-pressed"></i>Физическое
-        движение</span
-      ><span v-if="view === 'travel'">{{
-        live.active ? 'Ход в мм · — нет свежего измерения' : 'Включите наблюдение для измерений'
-      }}</span
-      ><span v-else>Ctrl + клик — несколько · протяните для группы</span>
+        ><i class="legend-selected"></i>{{ t('Выбрано') }}<i class="legend-pressed"></i
+        >{{ t('Глубина нажатия') }}</span
+      ><span>{{ t('Ctrl + клик — группа · стрелки — перемещение') }}</span>
     </div>
   </div>
 </template>

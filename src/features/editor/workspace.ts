@@ -12,6 +12,9 @@ import { clone, profileEdits, projectEdits, readLocalProfile, type LocalProfile 
 
 const emptyFrame = (): MonitorFrame => ({
   active: false,
+  rulesEnabled: false,
+  ruleFirings: 0,
+  ruleError: null,
   travel: [],
   history: [],
   colors: [],

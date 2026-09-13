@@ -171,7 +171,19 @@ export function bindingName(binding: BindingRecord | undefined, original: string
     case 2:
       return b === 0 ? 'Отключена' : keyName(b);
     case 3:
-      return `Медиа ${a + b * 256}`;
+      return (
+        (
+          {
+            0xe9: 'Vol +',
+            0xea: 'Vol −',
+            0xe2: 'Mute',
+            0xcd: '⏯',
+            0xb5: '⏭',
+            0xb6: '⏮',
+            0x192: 'Calc',
+          } as Record<number, string>
+        )[a + b * 256] ?? `Медиа ${a + b * 256}`
+      );
     case 6:
       return `Макрос ${a + 1}`;
     case 7:

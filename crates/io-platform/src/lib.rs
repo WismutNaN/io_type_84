@@ -17,3 +17,5 @@ pub fn application_info() -> AppInfo {
         device_access: DeviceAccess::Available,
     }
 }
+
+mod computer;

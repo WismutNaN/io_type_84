@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-14",
+  "scope": "UI/UX redesign and opt-in computer depth actions",
+  "checks": {
+    "npm_run_check": "passed before final UI-only refinements: 15 Rust tests, 6 TS tests, typecheck/build, formatting, clippy",
+    "final_npm_run_build": "passed",
+    "final_playwright": "3 passed; 1480x908 and 960x668; RU/EN; light/dark; layout/editors; release and stalled IPC retain selection"
+  },
+  "native": {
+    "first_release_build": "passed, 9713664-byte EXE at 02:10:44 local",
+    "connect": "IO White firmware 1.17 read through UI",
+    "monitor": "started; fresh small readings 0.16–0.18 mm seen, history stayed empty under new movement filter",
+    "writes": "No device SET or Windows media actions executed in this session",
+    "final_release_rebuild": "blocked by existing running EXE: Access is denied (os error 5)",
+    "computer_use": "User stopped Computer Use with physical Escape; no further UI interaction performed"
+  },
+  "limitations": [
+    "Current running EXE predates final short key legends and collapsed assignment chooser; rebuild after closing it.",
+    "Deep volume actions are implemented and model-tested; physical PgUp/PgDn-to-volume execution is not yet accepted.",
+    "Full analog mapping and live RGB remain unverified.",
+    "No firmware, calibration, reset or OTA was attempted."
+  ]
+}

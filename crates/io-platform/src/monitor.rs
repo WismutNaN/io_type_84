@@ -9,6 +9,9 @@ pub const SAMPLE_TTL: Duration = Duration::from_millis(600);
 
 pub struct MonitorState {
     pub active: bool,
+    pub rules_enabled: bool,
+    pub rule_firings: u32,
+    pub rule_error: Option<String>,
     pub message: Option<String>,
     pub packets: u32,
     travel: BTreeMap<u8, (KeyTravel, Instant)>,
@@ -23,6 +26,9 @@ impl Default for MonitorState {
     fn default() -> Self {
         Self {
             active: false,
+            rules_enabled: false,
+            rule_firings: 0,
+            rule_error: None,
             message: None,
             packets: 0,
             travel: BTreeMap::new(),
@@ -38,6 +44,7 @@ impl Default for MonitorState {
 impl MonitorState {
     pub fn pause(&mut self) {
         self.active = false;
+        self.rules_enabled = false;
         self.down.fill(false);
         self.travel.clear();
         self.colors.clear();
@@ -111,6 +118,9 @@ impl MonitorState {
     pub fn frame(&self) -> MonitorFrame {
         MonitorFrame {
             active: self.active,
+            rules_enabled: self.rules_enabled,
+            rule_firings: self.rule_firings,
+            rule_error: self.rule_error.clone(),
             travel: self
                 .travel
                 .values()

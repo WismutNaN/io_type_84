@@ -5,6 +5,9 @@ import type { MonitorFrame } from '../src/shared/contracts/generated.ts';
 test('a frozen IPC frame expires without inventing a zero-depth release', () => {
   const frame: MonitorFrame = {
     active: true,
+    rulesEnabled: false,
+    ruleFirings: 0,
+    ruleError: null,
     travel: [{ slot: 49, travelUm: 2100, maxTravelUm: 3200, ageMs: 100, adc: 0 }],
     history: [],
     colors: [],

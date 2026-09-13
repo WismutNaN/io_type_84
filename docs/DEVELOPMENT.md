@@ -4,22 +4,22 @@
 
 ## Код и границы
 
-| Путь | Ответственность |
-|---|---|
-| `crates/io-core/src/keyboard.rs` | Независимые serde/ts-rs DTO конфигурации, Edit, ChangePreview, MonitorFrame, AppError |
-| `crates/io-platform/src/protocol.rs` | Строгие AA/55 кадры и проверка ответов |
-| `crates/io-platform/src/device.rs` | hidapi, точная модель White 1.17, allowlist GET, raw snapshot/decode |
-| `crates/io-platform/src/changes.rs` | Модельная валидация и patch сохраняемых байтов, backup, SET/readback |
-| `crates/io-platform/src/service.rs` | Единственный владелец HID, bounded queue, watchdog, recovery |
-| `crates/io-platform/src/monitor.rs` | Разбор FB, свежесть, гистерезис и 20 событий в памяти |
-| `crates/io-cli` | Диагностика info/snapshot/colors/monitor N; без настроечных SET |
-| `src-tauri/src/lib.rs` | Composition root, async IPC через spawn_blocking, остановка worker при Exit |
-| `src/features/editor/workspace.ts` | Состояние UI, группы undo/redo, IPC, local profiles |
-| `src/features/editor/model.ts` | Проекция Edit в черновик, имена действий, проверка собственной JSON-схемы |
-| `src/features/editor/io-vision-profile.ts` | Частичный импорт сайта: только известные поля, отдельный отчёт |
-| `src/features/editor/*Editor.vue`, `Inspector.vue` | Формы макросов, DKS и настройки выделенной группы |
-| `src/shared/keyboard-view` | Реальная геометрия 84 клавиш, logical code, sparse slot и отображение |
-| `src/App.vue` | Рабочее пространство, редактор света, профили/параметры, применение |
+| Путь                                               | Ответственность                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `crates/io-core/src/keyboard.rs`                   | Независимые serde/ts-rs DTO конфигурации, Edit, ChangePreview, MonitorFrame, AppError |
+| `crates/io-platform/src/protocol.rs`               | Строгие AA/55 кадры и проверка ответов                                                |
+| `crates/io-platform/src/device.rs`                 | hidapi, точная модель White 1.17, allowlist GET, raw snapshot/decode                  |
+| `crates/io-platform/src/changes.rs`                | Модельная валидация и patch сохраняемых байтов, backup, SET/readback                  |
+| `crates/io-platform/src/service.rs`                | Единственный владелец HID, bounded queue, watchdog, recovery                          |
+| `crates/io-platform/src/monitor.rs`                | Разбор FB, свежесть, гистерезис и 20 событий в памяти                                 |
+| `crates/io-cli`                                    | Диагностика info/snapshot/colors/monitor N; без настроечных SET                       |
+| `src-tauri/src/lib.rs`                             | Composition root, async IPC через spawn_blocking, остановка worker при Exit           |
+| `src/features/editor/workspace.ts`                 | Состояние UI, группы undo/redo, IPC, local profiles                                   |
+| `src/features/editor/model.ts`                     | Проекция Edit в черновик, имена действий, проверка собственной JSON-схемы             |
+| `src/features/editor/io-vision-profile.ts`         | Частичный импорт сайта: только известные поля, отдельный отчёт                        |
+| `src/features/editor/*Editor.vue`, `Inspector.vue` | Формы макросов, DKS и настройки выделенной группы                                     |
+| `src/shared/keyboard-view`                         | Реальная геометрия 84 клавиш, logical code, sparse slot и отображение                 |
+| `src/App.vue`                                      | Рабочее пространство, редактор света, профили/параметры, применение                   |
 
 Core не зависит от Tauri/Win32/hidapi. IO-specific byte layout и ограничения относятся к platform adapter. Разделение будущих доменных агрегатов описано в `modules/`, но наличие предложенного типа там не означает его реализации. Pinia/router и отдельный процесс агента пока не требуются.
 
@@ -50,7 +50,7 @@ cargo run -p io-cli -- snapshot
 cargo run -p io-cli -- monitor 20
 ```
 
-`check`: Prettier, Vue/TS, Vite, 5 TS-тестов модели/импорта, rustfmt, Rust workspace tests, Clippy `-D warnings`. Rust-тест упаковки требует `io-desktop/custom-protocol` и проверяет наличие HTML/JS/CSS. Native UI проверяется отдельно.
+`check`: Prettier, Vue/TS, Vite, TS-тесты модели/импорта и старения телеметрии, rustfmt, Rust workspace tests, Clippy `-D warnings`. Rust-тест упаковки требует `io-desktop/custom-protocol` и проверяет наличие HTML/JS/CSS. Native UI проверяется отдельно.
 
 Аппаратные исследовательские examples `verify_lighting` и `verify_configuration` исполняются только с явным `--run`. Они временно меняют конкретные блоки, сохраняют резервные снимки в игнорируемый архив и восстанавливают исходное. Не включать их в CI. При ошибке восстановления остановиться и использовать сохранённый снимок; не повторять SET вслепую.
 
@@ -62,4 +62,10 @@ Release EXE содержит frontend. Изменение Vue требует п�
 
 Live-тесты выполнять физическими нажатиями, а не инъекцией клавиатуры через ОС: последняя не проверяет магнитный датчик. Не выдавать произвольные два входящих адреса за доказательство всей раскладки.
 
-Геометрия взята со скриншота владельца и связана с [картой слотов](evidence/layout-reference.json). Условный значок панели не утверждает её топологию. При ширине окна до 1350 px инспектор размещается ниже клавиатуры, чтобы не уменьшать подписи до нечитаемого размера. Диалоги удерживают фокус, поддерживается клавиатурный выбор и reduced motion.
+Геометрия взята со скриншота владельца и связана с [картой слотов](evidence/layout-reference.json). Условный значок панели не утверждает её топологию. При ширине окна меньше 1280 px инспектор размещается ниже клавиатуры, чтобы не уменьшать подписи до нечитаемого размера. Диалоги удерживают фокус, поддерживается клавиатурный выбор и reduced motion.
+
+## Взаимодействие, темы и компьютерные действия
+
+Текущий код и границы: [модуль редактора](../modules/editor-interaction.md). Новый IPC `configure_rules(rules, enabled)` запускает только allowlist четырёх media-действий через переход по глубине. `MonitorFrame` дополнен rulesEnabled/ruleFirings/ruleError. Без активного монитора включение отклоняется. Все аппаратные записи по-прежнему требуют Apply; сами программные правила не меняют USB-конфигурацию.
+
+`npm run test:ui` использует Playwright и установленный Microsoft Edge (`channel: msedge`), поднимает Vite при необходимости. На Linux CI нужен соответствующий browser channel или конфигурация Chromium. Скриншоты тестовой конфигурации пишутся в игнорируемый archive_data; тестовый код не добавляет simulation API в приложение. `io.rules.v1` хранится отдельно от `io.profiles.v1`, его экспорт пока не входит в профиль устройства. `io.locale`/`io.theme` — предпочтения приложения.

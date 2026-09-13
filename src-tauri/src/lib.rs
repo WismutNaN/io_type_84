@@ -68,6 +68,16 @@ async fn prepare_recovery(service: tauri::State<'_, KeyboardService>) -> Result<
     background(move || s.prepare_recovery()).await
 }
 
+#[tauri::command]
+async fn configure_rules(
+    rules: Vec<io_core::depth::DepthRule>,
+    enabled: bool,
+    service: tauri::State<'_, KeyboardService>,
+) -> Result<()> {
+    let s = service.inner().clone();
+    background(move || s.configure_rules(rules, enabled)).await
+}
+
 fn app_context() -> tauri::Context<tauri::Wry> {
     tauri::generate_context!()
 }
@@ -88,6 +98,7 @@ pub fn run() {
             set_monitor,
             monitor_frame,
             clear_history,
+            configure_rules,
             prepare_changes,
             apply_changes,
             prepare_recovery

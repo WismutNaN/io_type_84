@@ -231,10 +231,15 @@ pub struct MonitorFrame {
     pub color_age_ms: Option<u32>,
     pub packets: u32,
     pub message: Option<String>,
+    pub rules_enabled: bool,
+    pub rule_firings: u32,
+    pub rule_error: Option<String>,
 }
 
 pub fn typescript_contracts(config: &Config) -> String {
     [
+        crate::depth::ComputerAction::decl(config),
+        crate::depth::DepthRule::decl(config),
         AppError::decl(config),
         DeviceIdentity::decl(config),
         Rgb::decl(config),

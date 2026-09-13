@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { t, mm } from '../../shared/ui/preferences';
+import { computed, ref, watch } from 'vue';
 import type { DksConfiguration, Edit, KeyboardSnapshot } from '../../shared/contracts/generated';
 import { clone, keyChoices } from './model';
+import TravelSlider from '../../shared/ui/TravelSlider.vue';
 const props = defineProps<{
   snapshot: KeyboardSnapshot;
   selected: number[];
@@ -49,11 +51,23 @@ function state(action: number, phase: number) {
   const mask = form.value.states[phase] ?? 0;
   return mask & (1 << action) ? 1 : mask & (1 << (action + 4)) ? 2 : 0;
 }
-function toggle(action: number, phase: number) {
-  const next = (state(action, phase) + 1) % 3;
-  let mask = (form.value.states[phase] ?? 0) & ~((1 << action) | (1 << (action + 4)));
+const phase = ref(0);
+const phaseLabels = ['Первое нажатие', 'Глубокое нажатие', 'Начало отпускания', 'Конец отпускания'];
+const threshold = computed({
+  get: () => (form.value.thresholds[phase.value] ?? 1) * 100,
+  set: (value: number) => {
+    const n = Math.round(value / 100);
+    form.value.thresholds[phase.value] = n;
+    if (phase.value === 0) form.value.thresholds[1] = Math.max(n, form.value.thresholds[1]!);
+    if (phase.value === 1) form.value.thresholds[0] = Math.min(n, form.value.thresholds[0]!);
+    if (phase.value === 2) form.value.thresholds[3] = Math.min(n, form.value.thresholds[3]!);
+    if (phase.value === 3) form.value.thresholds[2] = Math.max(n, form.value.thresholds[2]!);
+  },
+});
+function setState(action: number, next: number) {
+  let mask = (form.value.states[phase.value] ?? 0) & ~((1 << action) | (1 << (action + 4)));
   if (next) mask |= 1 << (action + (next === 2 ? 4 : 0));
-  form.value.states[phase] = mask;
+  form.value.states[phase.value] = mask;
 }
 function stage() {
   if (noFreeSlot.value) return;
@@ -70,79 +84,53 @@ function stage() {
 }
 </script>
 <template>
-  <section class="surface editor-panel">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">ЧЕТЫРЕ ЭТАПА ХОДА</p>
-        <h2>Динамическое нажатие · DKS</h2>
-      </div>
-      <span class="tag">{{ noFreeSlot ? 'Нет свободной записи' : `Слот ${form.index + 1}` }}</span>
+  <section class="dks-editor">
+    <div class="field-heading">
+      <h3>{{ t('Действия по ходу') }} · DKS</h3>
+      <span class="tag">{{ t('На клавиатуре') }}</span>
     </div>
-    <p class="hint">
-      Выберите одну клавишу. Ячейка переключается: ничего → короткое действие → удержание.
-    </p>
-    <p v-if="noFreeSlot" class="hint">
-      Все записи заняты. Можно выбрать клавишу с уже назначенным DKS и изменить её запись.
-    </p>
+    <p class="hint">{{ t('Выберите этап движения, задайте глубину и действие.') }}</p>
+    <p v-if="noFreeSlot" class="hint">{{ t('Нет свободной записи') }}</p>
     <fieldset :disabled="disabled || selected.length !== 1 || noFreeSlot">
-      <div class="dks-table-wrap">
-        <table class="dks-table">
-          <thead>
-            <tr>
-              <th>Действие</th>
-              <th
-                v-for="(label, phase) in ['↓ Порог 1', '↓ Порог 2', '↑ Порог 1', '↑ Порог 2']"
-                :key="label"
-              >
-                {{ label
-                }}<label
-                  ><input
-                    :value="(form.thresholds[phase] ?? 0) / 10"
-                    type="number"
-                    min="0.1"
-                    max="3.2"
-                    step="0.1"
-                    :aria-label="label"
-                    @change="
-                      form.thresholds[phase] = Math.round(
-                        Number(($event.target as HTMLInputElement).value) * 10,
-                      )
-                    "
-                  />
-                  мм</label
-                >
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(_, action) in form.actions" :key="action">
-              <td>
-                <select
-                  v-model.number="form.actions[action]"
-                  :aria-label="'Действие ' + (action + 1)"
-                >
-                  <option :value="0">Не задано</option>
-                  <option v-for="k in keyChoices" :key="k.code" :value="k.code">
-                    {{ k.label }}
-                  </option>
-                </select>
-              </td>
-              <td v-for="phase in [0, 1, 2, 3]" :key="phase">
-                <button
-                  class="dks-state"
-                  :class="{ tap: state(action, phase) === 1, hold: state(action, phase) === 2 }"
-                  @click="toggle(action, phase)"
-                >
-                  {{ ['—', 'Касание', 'Удержание'][state(action, phase)] }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="phase-tabs">
+        <button
+          v-for="(label, index) in phaseLabels"
+          :key="index"
+          :class="{ chosen: phase === index }"
+          :aria-pressed="phase === index"
+          @click="phase = index"
+        >
+          <b>{{ index < 2 ? '↓' : '↑' }} {{ mm((form.thresholds[index] ?? 0) * 100) }}</b
+          ><span>{{ t(label) }}</span>
+        </button>
+      </div>
+      <TravelSlider v-model="threshold" :label="phaseLabels[phase]!" :step="100" />
+      <div class="dks-action-rows">
+        <div v-for="(_, index) in form.actions" :key="index">
+          <select
+            v-model.number="form.actions[index]"
+            :aria-label="t('Действие') + ' ' + (index + 1)"
+          >
+            <option :value="0">{{ t('Не задано') }}</option>
+            <option v-for="key in keyChoices" :key="key.code" :value="key.code">
+              {{ key.label }}
+            </option>
+          </select>
+          <div class="segmented">
+            <button
+              v-for="(label, indexState) in ['Нет', 'Касание', 'Удержание']"
+              :key="label"
+              :class="{ active: state(index, phase) === indexState }"
+              :aria-pressed="state(index, phase) === indexState"
+              @click="setState(index, indexState)"
+            >
+              {{ t(label) }}
+            </button>
+          </div>
+        </div>
       </div>
       <div class="panel-actions">
-        <span class="hint">Формат SDK; аппаратное поведение ещё проверяется.</span
-        ><button class="primary" @click="stage">Добавить DKS в черновик</button>
+        <button class="primary" @click="stage">{{ t('Добавить DKS в черновик') }}</button>
       </div>
     </fieldset>
   </section>

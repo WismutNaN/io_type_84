@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { t } from '../../shared/ui/preferences';
 import { computed, ref, watch } from 'vue';
+import TravelSlider from '../../shared/ui/TravelSlider.vue';
+import { sampleDepth } from './telemetry';
+import type { MonitorFrame } from '../../shared/contracts/generated';
 import type { Actuation, Edit, KeyboardSnapshot } from '../../shared/contracts/generated';
 import {
   bindingName,
@@ -18,6 +22,7 @@ const props = defineProps<{
   section: string;
   functionLayer: boolean;
   disabled: boolean;
+  live: MonitorFrame;
 }>();
 const emit = defineEmits<{ stage: [...edits: Edit[]] }>();
 const key = computed(() => props.snapshot?.keys[props.selected[0] ?? -1]);
@@ -39,14 +44,18 @@ const search = ref(''),
   delay = ref(200),
   socd = ref(3);
 const color = ref('#a78bfa');
-watch(kind, (value) => {
-  if (value === 'mouse' || value === 'wheel') code.value = 1;
-  else if (value === 'media') code.value = 0xe9;
-  else if (value === 'device') code.value = 11;
-  else if (value === 'keyboard' || value === 'combo')
-    code.value = physicalKeyCodes[props.selected[0] ?? -1] ?? 4;
-  else if (value === 'macro') macroId.value = props.snapshot?.macros[0]?.id ?? 0;
-});
+watch(
+  kind,
+  (value) => {
+    if (value === 'mouse' || value === 'wheel') code.value = 1;
+    else if (value === 'media') code.value = 0xe9;
+    else if (value === 'device') code.value = 11;
+    else if (value === 'keyboard' || value === 'combo')
+      code.value = physicalKeyCodes[props.selected[0] ?? -1] ?? 4;
+    else if (value === 'macro') macroId.value = props.snapshot?.macros[0]?.id ?? 0;
+  },
+  { flush: 'sync' },
+);
 const rt = ref<Actuation>({
   triggerUm: 1200,
   pressUm: 100,
@@ -65,7 +74,49 @@ watch(
       if (!rt.value.releaseUm) rt.value.releaseUm = 100;
       color.value = hexColor(k.color);
       const bound = k[props.functionLayer ? 'function' : 'base'];
-      code.value = bound.page === 2 ? bound.parameters[1] : (physicalKeyCodes[k.slot] ?? 4);
+      kind.value =
+        (
+          {
+            0: 'default',
+            1: 'mouse',
+            2: 'keyboard',
+            3: 'media',
+            6: 'macro',
+            7: 'combo',
+            13: 'device',
+          } as Record<number, string>
+        )[bound.page] ?? 'keyboard';
+      if (bound.page === 1 && bound.parameters[0] === 3) kind.value = 'wheel';
+      code.value =
+        bound.page === 3
+          ? bound.parameters[0] + bound.parameters[1] * 256
+          : bound.page === 13
+            ? bound.parameters[2]
+            : bound.page === 1
+              ? bound.parameters[1]
+              : bound.page === 7
+                ? bound.parameters[2]
+                : bound.page === 2
+                  ? bound.parameters[1]
+                  : (physicalKeyCodes[k.slot] ?? 4);
+      if (bound.page === 6) {
+        macroId.value = bound.parameters[0];
+        repeats.value = bound.parameters[2] || 1;
+      }
+      if (bound.page === 7) {
+        modifier1.value = bound.parameters[0];
+        modifier2.value = bound.parameters[1];
+      }
+      advanced.value =
+        ({ 9: 'mt', 10: 'tgl', 11: 'socd', 12: 'rs' } as Record<number, string>)[bound.page] ??
+        'mt';
+      if (bound.page === 9) {
+        holdCode.value = bound.parameters[0];
+        tapCode.value = bound.parameters[1];
+        delay.value = bound.parameters[2] * 10;
+      }
+      if (bound.page === 10) tapCode.value = bound.parameters[0];
+      if (bound.page === 11) socd.value = bound.parameters[0];
     }
   },
   { immediate: true },
@@ -144,215 +195,220 @@ function advancedEdit() {
 
 <template>
   <aside class="inspector surface">
-    <div class="inspector-title">
-      <span class="eyebrow">ВЫБРАНО</span>
-      <h2>{{ selected.length ? selectionTitle : 'Выберите клавишу' }}</h2>
-      <p v-if="key && selected.length === 1">
-        {{ bindingName(key[functionLayer ? 'function' : 'base'], selectionTitle) }} ·
-        {{ functionLayer ? 'Fn' : 'Базовый' }} слой
-      </p>
-      <p v-else>Настройка одной клавиши или всей группы.</p>
-    </div>
     <div v-if="!selected.length" class="selection-empty">
-      <span>⌁</span>
-      <h3>Начните с клавиатуры</h3>
-      <p>Нажмите на клавишу или выберите группу. Все её настройки будут здесь.</p>
+      <h3>{{ t('Выберите клавишу') }}</h3>
+      <p>{{ t('Нажмите на макет. Ctrl + клик добавляет клавиши в группу.') }}</p>
     </div>
     <fieldset v-else :disabled="disabled || !snapshot" class="inspector-fields">
+      <div class="field-heading" v-if="section !== 'lighting'">
+        <h3>{{ selectionTitle }}</h3>
+        <span class="tag">{{ t(String(functionLayer ? 'Fn' : 'На клавиатуре')) }}</span>
+      </div>
       <p v-if="selected.length > 1" class="hint">
-        Показаны значения первой выбранной клавиши. Добавленное изменение применяется ко всей
-        группе.
+        {{
+          t(
+            'Показаны значения первой выбранной клавиши. Добавленное изменение применяется ко всей группе.',
+          )
+        }}
       </p>
       <template v-if="section === 'actuation' || section === 'overview'">
-        <div class="field-heading">
-          <h3>Точка активации</h3>
-          <span class="value-chip">{{ (rt.triggerUm / 1000).toFixed(2) }} <small>мм</small></span>
+        <TravelSlider
+          v-model="rt.triggerUm"
+          :label="t('Точка срабатывания')"
+          :live="sampleDepth(live, selected[0] ?? -1)"
+        />
+        <div class="preset-row">
+          <button @click="rt.triggerUm = 400">{{ t('Лёгкое') }}</button
+          ><button @click="rt.triggerUm = 1200">{{ t('Обычное') }}</button
+          ><button @click="rt.triggerUm = 2400">{{ t('Глубокое') }}</button>
         </div>
         <p v-if="rt.triggerUm < 100" class="hint">
-          В снимке нулевой порог. Для нового назначения выберите значение от 0,10 мм.
+          {{ t('В профиле нулевой порог. Выберите точку срабатывания.') }}
         </p>
-        <div class="travel-control">
-          <div class="travel-track">
-            <div :style="{ height: `${(rt.triggerUm / 3200) * 100}%` }"></div>
-            <span :style="{ bottom: `${(rt.triggerUm / 3200) * 100}%` }"></span>
-          </div>
-          <div>
-            <input
-              v-model.number="rt.triggerUm"
-              type="range"
-              min="100"
-              max="3200"
-              step="10"
-              aria-label="Точка активации в микрометрах"
-            />
-            <div class="range-labels"><span>0,10</span><span>3,20 мм</span></div>
-            <p>Меньше ход — раньше срабатывание.</p>
-            <label class="numeric-inline"
-              >Точно, мм<input
-                :value="(rt.triggerUm / 1000).toFixed(2)"
-                type="number"
-                min="0.1"
-                max="3.2"
-                step="0.01"
-                @change="
-                  rt.triggerUm = Math.round(
-                    Number(($event.target as HTMLInputElement).value) * 1000,
-                  )
-                "
-            /></label>
-          </div>
-        </div>
         <label class="switch-line"
-          ><span><b>Rapid Trigger</b><small>Повторное срабатывание по движению</small></span
+          ><span
+            ><b>Rapid Trigger</b><small>{{ t('Повторное срабатывание по движению') }}</small></span
           ><input v-model="rt.rapidTrigger" type="checkbox" role="switch"
         /></label>
         <div v-if="rt.rapidTrigger" class="rt-settings">
-          <label
-            >Нажатие <span>{{ (rt.pressUm / 1000).toFixed(2) }} мм</span
-            ><input v-model.number="rt.pressUm" type="range" min="10" max="3200" step="10"
-          /></label>
-          <label
-            >Отпускание <span>{{ (rt.releaseUm / 1000).toFixed(2) }} мм</span
-            ><input v-model.number="rt.releaseUm" type="range" min="10" max="3200" step="10"
-          /></label>
-          <label class="check-line"
-            ><input v-model="rt.wholeTravel" type="checkbox" />На всём ходе (Whole Fast)</label
-          ><label class="check-line"><input v-model="rt.rampage" type="checkbox" />Rampage</label>
+          <TravelSlider
+            v-model="rt.pressUm"
+            :label="t('Повторное нажатие')"
+            :min="10"
+            :low="t('Чувствительнее')"
+            :high="t('Стабильнее')"
+          />
+          <TravelSlider
+            v-model="rt.releaseUm"
+            :label="t('Отпускание')"
+            :min="10"
+            :low="t('Чувствительнее')"
+            :high="t('Стабильнее')"
+          />
+          <details>
+            <summary>{{ t('Дополнительно') }}</summary>
+            <label class="check-line"
+              ><input v-model="rt.wholeTravel" type="checkbox" />{{ t('На всём ходе') }}</label
+            ><label class="check-line"><input v-model="rt.rampage" type="checkbox" />Rampage</label>
+          </details>
         </div>
         <button
           class="primary full"
           @click="emit('stage', { kind: 'actuation', slots: selected, value: clone(rt) })"
         >
-          Добавить в черновик
+          {{ t('Добавить в черновик') }}
         </button>
-        <p class="hint">
-          Группа получает выбранные пороги. Тип датчика и неизвестные поля сохраняются.
-        </p>
       </template>
       <template v-else-if="section === 'keys'">
-        <label
-          >Тип действия<select
-            v-model="kind"
-            @change="code = kind === 'mouse' ? 1 : kind === 'media' ? 0xe9 : 4"
-          >
-            <option value="keyboard">Клавиша</option>
-            <option value="media">Медиа</option>
-            <option value="device">Действие клавиатуры / панели</option>
-            <option value="mouse">Кнопка мыши</option>
-            <option value="wheel">Прокрутка мыши</option>
-            <option value="combo">Сочетание клавиш</option>
-            <option value="macro">Аппаратный макрос</option>
-            <option value="default">Заводское назначение</option>
-            <option value="disabled">Отключить</option>
-          </select></label
-        >
-        <template v-if="kind === 'keyboard'"
-          ><input
-            v-model="search"
-            class="search"
-            type="search"
-            placeholder="Найти клавишу…"
-            aria-label="Поиск назначения"
-          />
-          <div class="character-grid">
-            <button
-              v-for="choice in choices"
-              :key="choice.code"
-              :class="{ chosen: code === choice.code }"
-              :title="choice.group"
-              @click="code = choice.code"
+        <details class="assignment-details">
+          <summary>
+            {{ t('Основное действие')
+            }}<b>{{
+              t(bindingName(key?.[functionLayer ? 'function' : 'base'], selectionTitle))
+            }}</b>
+          </summary>
+          <div class="assignment-fields">
+            <label
+              >{{ t('Тип действия')
+              }}<select v-model="kind">
+                <option value="keyboard">{{ t('Клавиша') }}</option>
+                <option value="media">{{ t('Медиа') }}</option>
+                <option value="device">{{ t('Действие клавиатуры / панели') }}</option>
+                <option value="mouse">{{ t('Кнопка мыши') }}</option>
+                <option value="wheel">{{ t('Прокрутка мыши') }}</option>
+                <option value="combo">{{ t('Сочетание клавиш') }}</option>
+                <option value="macro">{{ t('Аппаратный макрос') }}</option>
+                <option value="default">{{ t('Заводское назначение') }}</option>
+                <option value="disabled">{{ t('Отключить') }}</option>
+              </select></label
             >
-              {{ choice.label }}
+            <template v-if="kind === 'keyboard'"
+              ><input
+                v-model="search"
+                class="search"
+                type="search"
+                :placeholder="t('Найти клавишу…')"
+                :aria-label="t('Поиск назначения')"
+              />
+              <div class="character-grid">
+                <button
+                  v-for="choice in choices"
+                  :key="choice.code"
+                  :class="{ chosen: code === choice.code }"
+                  :title="t(choice.group)"
+                  @click="code = choice.code"
+                >
+                  {{ choice.label }}
+                </button>
+              </div>
+              <p>
+                {{ t('Назначение:') }}<b>{{ keyName(code) }}</b>
+              </p></template
+            >
+            <select v-if="kind === 'media'" v-model.number="code" :aria-label="t('Медиа-действие')">
+              <option :value="0xe9">{{ t('Громче') }}</option>
+              <option :value="0xea">{{ t('Тише') }}</option>
+              <option :value="0xe2">{{ t('Без звука') }}</option>
+              <option :value="0xcd">{{ t('Воспроизведение / пауза') }}</option>
+              <option :value="0xb5">{{ t('Следующий трек') }}</option>
+              <option :value="0xb6">{{ t('Предыдущий трек') }}</option>
+              <option :value="0x192">{{ t('Калькулятор') }}</option>
+            </select>
+            <select
+              v-if="kind === 'device'"
+              v-model.number="code"
+              :aria-label="t('Действие прошивки')"
+            >
+              <option v-for="a in deviceActions" :key="a.code" :value="a.code">
+                {{ t(a.label) }}
+              </option>
+            </select>
+            <select v-if="kind === 'mouse'" v-model.number="code" :aria-label="t('Кнопка мыши')">
+              <option :value="1">{{ t('Левая') }}</option>
+              <option :value="2">{{ t('Правая') }}</option>
+              <option :value="4">{{ t('Средняя') }}</option>
+              <option :value="8">{{ t('Назад') }}</option>
+              <option :value="16">{{ t('Вперёд') }}</option>
+            </select>
+            <select
+              v-if="kind === 'wheel'"
+              v-model.number="code"
+              :aria-label="t('Направление прокрутки')"
+            >
+              <option :value="1">{{ t('Вверх') }}</option>
+              <option :value="255">{{ t('Вниз') }}</option>
+            </select>
+            <template v-if="kind === 'combo'">
+              <label
+                >{{ t('Модификатор')
+                }}<select v-model.number="modifier1">
+                  <option
+                    v-for="k in keyChoices.filter((k) => k.code >= 224)"
+                    :key="k.code"
+                    :value="k.code"
+                  >
+                    {{ k.label }}
+                  </option>
+                </select></label
+              >
+              <label
+                >{{ t('Второй модификатор')
+                }}<select v-model.number="modifier2">
+                  <option :value="0">{{ t('Нет') }}</option>
+                  <option
+                    v-for="k in keyChoices.filter((k) => k.code >= 224 && k.code !== modifier1)"
+                    :key="k.code"
+                    :value="k.code"
+                  >
+                    {{ k.label }}
+                  </option>
+                </select></label
+              >
+              <label
+                >{{ t('Клавиша')
+                }}<select v-model.number="code">
+                  <option
+                    v-for="k in keyChoices.filter((k) => k.code < 116)"
+                    :key="k.code"
+                    :value="k.code"
+                  >
+                    {{ k.label }}
+                  </option>
+                </select></label
+              >
+            </template>
+            <select
+              v-if="kind === 'macro'"
+              v-model.number="macroId"
+              :aria-label="t('Аппаратный макрос')"
+            >
+              <option v-for="m in snapshot?.macros" :key="m.id" :value="m.id">
+                {{ t('Макрос') }}{{ m.id + 1 }} · {{ m.steps.length }}{{ t('действий') }}
+              </option>
+            </select>
+            <label v-if="kind === 'macro'"
+              >{{ t('Повторов') }}<input v-model.number="repeats" type="number" min="1" max="255"
+            /></label>
+            <button
+              class="primary full"
+              :disabled="
+                kind === 'macro' &&
+                !snapshot?.macros.some((m) => m.id === macroId && m.steps.length)
+              "
+              @click="bind"
+            >
+              {{ t('Назначить в черновике') }}
             </button>
           </div>
-          <p>
-            Назначение: <b>{{ keyName(code) }}</b>
-          </p></template
-        >
-        <select v-if="kind === 'media'" v-model.number="code" aria-label="Медиа-действие">
-          <option :value="0xe9">Громче</option>
-          <option :value="0xea">Тише</option>
-          <option :value="0xe2">Без звука</option>
-          <option :value="0xcd">Воспроизведение / пауза</option>
-          <option :value="0xb5">Следующий трек</option>
-          <option :value="0xb6">Предыдущий трек</option>
-          <option :value="0x192">Калькулятор</option>
-        </select>
-        <select v-if="kind === 'device'" v-model.number="code" aria-label="Действие прошивки">
-          <option v-for="a in deviceActions" :key="a.code" :value="a.code">{{ a.label }}</option>
-        </select>
-        <select v-if="kind === 'mouse'" v-model.number="code" aria-label="Кнопка мыши">
-          <option :value="1">Левая</option>
-          <option :value="2">Правая</option>
-          <option :value="4">Средняя</option>
-          <option :value="8">Назад</option>
-          <option :value="16">Вперёд</option>
-        </select>
-        <select v-if="kind === 'wheel'" v-model.number="code" aria-label="Направление прокрутки">
-          <option :value="1">Вверх</option>
-          <option :value="255">Вниз</option>
-        </select>
-        <template v-if="kind === 'combo'">
-          <label
-            >Модификатор<select v-model.number="modifier1">
-              <option
-                v-for="k in keyChoices.filter((k) => k.code >= 224)"
-                :key="k.code"
-                :value="k.code"
-              >
-                {{ k.label }}
-              </option>
-            </select></label
-          >
-          <label
-            >Второй модификатор<select v-model.number="modifier2">
-              <option :value="0">Нет</option>
-              <option
-                v-for="k in keyChoices.filter((k) => k.code >= 224 && k.code !== modifier1)"
-                :key="k.code"
-                :value="k.code"
-              >
-                {{ k.label }}
-              </option>
-            </select></label
-          >
-          <label
-            >Клавиша<select v-model.number="code">
-              <option
-                v-for="k in keyChoices.filter((k) => k.code < 116)"
-                :key="k.code"
-                :value="k.code"
-              >
-                {{ k.label }}
-              </option>
-            </select></label
-          >
-        </template>
-        <select v-if="kind === 'macro'" v-model.number="macroId" aria-label="Аппаратный макрос">
-          <option v-for="m in snapshot?.macros" :key="m.id" :value="m.id">
-            Макрос {{ m.id + 1 }} · {{ m.steps.length }} действий
-          </option>
-        </select>
-        <label v-if="kind === 'macro'"
-          >Повторов<input v-model.number="repeats" type="number" min="1" max="255"
-        /></label>
-        <button
-          class="primary full"
-          :disabled="
-            kind === 'macro' && !snapshot?.macros.some((m) => m.id === macroId && m.steps.length)
-          "
-          @click="bind"
-        >
-          Назначить в черновике
-        </button>
+        </details>
       </template>
       <template v-else-if="section === 'lighting'">
-        <h3>Цвет выбранных клавиш</h3>
+        <h3>{{ t('Цвет выбранных клавиш') }}</h3>
         <div class="color-input">
-          <input v-model="color" type="color" aria-label="Цвет клавиш" /><input
+          <input v-model="color" type="color" :aria-label="t('Цвет клавиш')" /><input
             v-model="color"
             maxlength="7"
-            aria-label="HEX цвета"
+            :aria-label="t('HEX цвета')"
           />
         </div>
         <button
@@ -360,55 +416,61 @@ function advancedEdit() {
           :disabled="!/^#[0-9a-f]{6}$/i.test(color)"
           @click="emit('stage', { kind: 'color', slots: selected, color: parseColor(color) })"
         >
-          Окрасить в черновике
+          {{ t('Окрасить в черновике') }}
         </button>
         <p class="hint">
-          Индивидуальные цвета использует эффект «Свои цвета». Текущий свет устройства может
-          отличаться.
+          {{
+            t(
+              'Индивидуальные цвета использует эффект «Свои цвета». Текущий свет устройства может отличаться.',
+            )
+          }}
         </p>
       </template>
       <template v-else-if="section === 'advanced'">
         <label
-          >Поведение<select v-model="advanced">
-            <option value="mt">MT · удержание и касание</option>
-            <option value="tgl">TGL · переключатель</option>
-            <option value="rs">RS · глубже нажатая клавиша</option>
-            <option value="socd">SOCD · приоритет пары</option>
+          >{{ t('Поведение')
+          }}<select v-model="advanced">
+            <option value="mt">{{ t('MT · удержание и касание') }}</option>
+            <option value="tgl">{{ t('TGL · переключатель') }}</option>
+            <option value="rs">{{ t('RS · глубже нажатая клавиша') }}</option>
+            <option value="socd">{{ t('SOCD · приоритет пары') }}</option>
           </select></label
         >
         <p class="hint">
           {{
-            advanced === 'mt'
-              ? 'Разные действия для удержания и короткого нажатия.'
-              : advanced === 'tgl'
-                ? 'Короткое нажатие переключает удержание действия.'
-                : 'Выберите ровно две физические клавиши.'
+            t(
+              String(
+                advanced === 'mt'
+                  ? 'Разные действия для удержания и короткого нажатия.'
+                  : advanced === 'tgl'
+                    ? 'Короткое нажатие переключает удержание действия.'
+                    : 'Выберите ровно две физические клавиши.',
+              ),
+            )
           }}
         </p>
         <template v-if="advanced === 'mt' || advanced === 'tgl'"
           ><label v-if="advanced === 'mt'"
-            >Удержание<select v-model.number="holdCode">
+            >{{ t('Удержание')
+            }}<select v-model.number="holdCode">
               <option v-for="k in keyChoices" :key="k.code" :value="k.code">{{ k.label }}</option>
             </select></label
           ><label
-            >{{ advanced === 'mt' ? 'Касание' : 'Действие'
+            >{{ t(String(advanced === 'mt' ? 'Касание' : 'Действие'))
             }}<select v-model.number="tapCode">
               <option v-for="k in keyChoices" :key="k.code" :value="k.code">{{ k.label }}</option>
             </select></label
           ><label v-if="advanced === 'mt'"
-            >Граница удержания, мс<input
-              v-model.number="delay"
-              type="number"
-              min="10"
-              max="1000"
-              step="10" /></label
+            >{{ t('Граница удержания ·') }}{{ delay }}{{ t('мс')
+            }}<input v-model.number="delay" type="range" min="10" max="1000" step="10" /></label
         ></template>
         <label v-if="advanced === 'socd'"
-          >Режим приоритета<select v-model.number="socd">
-            <option :value="3">Последняя нажатая</option>
-            <option :value="1">Первая клавиша пары</option>
-            <option :value="2">Вторая клавиша пары</option>
-            <option :value="4">Нейтральный</option>
+          >{{ t('Режим приоритета')
+          }}<select v-model.number="socd">
+            <option :value="3">{{ t('Последняя нажатая') }}</option>
+            <option :value="1">{{ t('Первая клавиша пары') }}</option>
+            <option :value="2">{{ t('Вторая клавиша пары') }}</option>
+            <option :value="4">{{ t('Нейтральный') }}</option>
           </select></label
         >
         <button
@@ -418,18 +480,18 @@ function advancedEdit() {
           "
           @click="advancedEdit"
         >
-          Добавить поведение
+          {{ t('Добавить поведение') }}
         </button>
-        <p class="hint">
-          Формат взят из редактора IO. Физическое поведение проверяется после применения. Пара
-          RS/SOCD изменяется целиком.
-        </p>
       </template>
       <template v-else
-        ><p class="hint">Выбранные клавиши сохраняются при переходе между редакторами.</p>
+        ><p class="hint">
+          {{ t('Выбранные клавиши сохраняются при переходе между редакторами.') }}
+        </p>
         <div class="selected-key-details">
-          <span>Порог</span><b>{{ ((key?.actuation.triggerUm ?? 0) / 1000).toFixed(2) }} мм</b
-          ><span>Заданный цвет</span><b>{{ key ? hexColor(key.color) : '—' }}</b>
+          <span>{{ t('Порог') }}</span
+          ><b>{{ ((key?.actuation.triggerUm ?? 0) / 1000).toFixed(2) }}{{ t('мм') }}</b
+          ><span>{{ t('Заданный цвет') }}</span
+          ><b>{{ key ? hexColor(key.color) : '—' }}</b>
         </div></template
       >
     </fieldset>

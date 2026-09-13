@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '../../shared/ui/preferences';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import type {
   Edit,
@@ -122,16 +123,15 @@ function move(index: number, offset: number) {
   <section class="surface editor-panel">
     <div class="panel-heading">
       <div>
-        <p class="eyebrow">ПОСЛЕДОВАТЕЛЬНОСТИ</p>
-        <h2>Макросы без лишних движений</h2>
+        <p class="eyebrow">{{ t('ПОСЛЕДОВАТЕЛЬНОСТИ') }}</p>
+        <h2>{{ t('Макросы') }}</h2>
       </div>
-      <span class="tag" :class="{ danger: used > 512 }">{{ used }} / 512 байт</span>
+      <span class="tag" :class="{ danger: used > 512 }">{{ used }}{{ t('/ 512 байт') }}</span>
     </div>
-    <p class="hint">
-      512 байт — временный консервативный лимит вместе с каталогом. Большая ёмкость прошивки ещё
-      исследуется.
+    <p v-if="used > 512" class="hint">
+      {{ t('Недостаточно памяти. Удалите несколько шагов или другой макрос.') }}
     </p>
-    <div class="macro-workspace">
+    <div class="macro-layout">
       <div class="macro-list">
         <button
           v-for="m in snapshot.macros"
@@ -139,8 +139,8 @@ function move(index: number, offset: number) {
           :class="{ active: selected === m.id }"
           @click="select(m.id)"
         >
-          <b>Макрос {{ m.id + 1 }}</b
-          ><small>{{ m.steps.length }} шагов</small></button
+          <b>{{ t('Макрос') }}{{ m.id + 1 }}</b
+          ><small>{{ m.steps.length }}{{ t('шагов') }}</small></button
         ><button
           class="secondary"
           @click="
@@ -151,29 +151,34 @@ function move(index: number, offset: number) {
             )
           "
         >
-          ＋ Новый макрос
+          {{ t('＋ Новый макрос') }}
         </button>
       </div>
       <div class="macro-steps">
-        <div class="inline-toolbar">
-          <h3>Макрос {{ selected + 1 }}</h3>
+        <div class="macro-toolbar">
+          <h3>{{ t('Макрос') }}{{ selected + 1 }}</h3>
           <button
             class="record-button"
             :class="{ recording }"
             :disabled="disabled"
             @click="recording ? stop() : start()"
           >
-            {{ recording ? '■ Остановить · Esc' : '● Записать в этом окне' }}
+            {{ t(String(recording ? '■ Остановить · Esc' : '● Записать в этом окне')) }}
           </button>
         </div>
         <p v-if="recording" class="recording-hint" role="status">
-          Запись активна. Клавиши перехватываются только в этом окне. Потеря фокуса завершит запись.
+          {{
+            t(
+              'Запись активна. Клавиши перехватываются только в этом окне. Потеря фокуса завершит запись.',
+            )
+          }}
         </p>
         <div class="macro-options">
           <label class="check-line"
-            ><input v-model="keepDelays" type="checkbox" />Записывать интервалы</label
+            ><input v-model="keepDelays" type="checkbox" />{{ t('Записывать интервалы') }}</label
           ><label
-            >Интервал, мс <input v-model.number="defaultDelay" type="number" min="0" max="65535"
+            >{{ t('Интервал, мс')
+            }}<input v-model.number="defaultDelay" type="number" min="0" max="65535"
           /></label>
         </div>
         <div class="step-table-wrap">
@@ -181,20 +186,22 @@ function move(index: number, offset: number) {
             <thead>
               <tr>
                 <th>№</th>
-                <th>Клавиша</th>
-                <th>Действие</th>
-                <th>Пауза, мс</th>
+                <th>{{ t('Клавиша') }}</th>
+                <th>{{ t('Действие') }}</th>
+                <th>{{ t('Пауза, мс') }}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(step, index) in steps" :key="index">
                 <td>{{ index + 1 }}</td>
-                <td>{{ step.kind === 3 ? 'Мышь ' + step.keyCode : keyName(step.keyCode) }}</td>
                 <td>
-                  <select v-model="step.pressed" aria-label="Действие шага">
-                    <option :value="true">↓ Нажать</option>
-                    <option :value="false">↑ Отпустить</option>
+                  {{ t(String(step.kind === 3 ? 'Мышь ' + step.keyCode : keyName(step.keyCode))) }}
+                </td>
+                <td>
+                  <select v-model="step.pressed" :aria-label="t('Действие шага')">
+                    <option :value="true">{{ t('↓ Нажать') }}</option>
+                    <option :value="false">{{ t('↑ Отпустить') }}</option>
                   </select>
                 </td>
                 <td>
@@ -203,50 +210,51 @@ function move(index: number, offset: number) {
                     type="number"
                     min="0"
                     max="65535"
-                    aria-label="Задержка шага"
+                    :aria-label="t('Задержка шага')"
                   />
                 </td>
                 <td class="step-controls">
-                  <button :disabled="index === 0" title="Выше" @click="move(index, -1)">↑</button
+                  <button :disabled="index === 0" :title="t('Выше')" @click="move(index, -1)">
+                    ↑</button
                   ><button
                     :disabled="index === steps.length - 1"
-                    title="Ниже"
+                    :title="t('Ниже')"
                     @click="move(index, 1)"
                   >
                     ↓</button
-                  ><button title="Удалить шаг" @click="steps.splice(index, 1)">×</button>
+                  ><button :title="t('Удалить шаг')" @click="steps.splice(index, 1)">×</button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <p v-if="!steps.length" class="empty-inline">Добавьте действие или начните запись.</p>
+          <p v-if="!steps.length" class="empty-inline">
+            {{ t('Добавьте действие или начните запись.') }}
+          </p>
         </div>
         <div class="add-step">
           <label class="check-line"
-            ><input
-              v-model="addMouse"
-              type="checkbox"
-              @change="addCode = addMouse ? 1 : 4"
-            />Мышь</label
-          ><select v-model.number="addCode" aria-label="Добавляемая клавиша">
+            ><input v-model="addMouse" type="checkbox" @change="addCode = addMouse ? 1 : 4" />{{
+              t('Мышь')
+            }}</label
+          ><select v-model.number="addCode" :aria-label="t('Добавляемая клавиша')">
             <template v-if="!addMouse"
               ><option v-for="k in keyChoices" :key="k.code" :value="k.code">
                 {{ k.label }}
               </option></template
             ><template v-else
-              ><option :value="1">Левая</option>
-              <option :value="2">Правая</option>
-              <option :value="4">Средняя</option>
-              <option :value="8">Назад</option>
-              <option :value="16">Вперёд</option></template
+              ><option :value="1">{{ t('Левая') }}</option>
+              <option :value="2">{{ t('Правая') }}</option>
+              <option :value="4">{{ t('Средняя') }}</option>
+              <option :value="8">{{ t('Назад') }}</option>
+              <option :value="16">{{ t('Вперёд') }}</option></template
             ></select
-          ><button class="secondary" @click="addPair">＋ Нажать и отпустить</button>
+          ><button class="secondary" @click="addPair">{{ t('＋ Нажать и отпустить') }}</button>
         </div>
         <div class="panel-actions">
           <button class="text-button" :disabled="disabled" @click="stage(true)">
-            Удалить макрос</button
+            {{ t('Удалить макрос') }}</button
           ><button class="primary" :disabled="disabled || used > 512 || recording" @click="stage()">
-            Сохранить в черновик
+            {{ t('Сохранить в черновик') }}
           </button>
         </div>
       </div>

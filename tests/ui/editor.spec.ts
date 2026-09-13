@@ -1,0 +1,157 @@
+import { test, expect } from '@playwright/test';
+import { fixture } from '../fixture';
+test('all 84 keys, selection, depth actions, languages and themes fit supported sizes', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.setViewportSize({ width: 1480, height: 908 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Открыть пример', exact: true }).click();
+  await page.locator('[data-slot="105"]').click();
+  await page.getByRole('button', { name: 'Сохранить действие', exact: true }).click();
+  await expect(page.locator('[data-slot="105"]')).toContainText('Vol +');
+  await page.locator('[data-slot="108"]').click();
+  await page.getByRole('button', { name: 'Сохранить действие', exact: true }).click();
+  await expect(page.locator('[data-slot="108"]')).toContainText('Vol −');
+  for (const size of [
+    { width: 1480, height: 908 },
+    { width: 960, height: 668 },
+  ]) {
+    await page.setViewportSize(size);
+    await expect(page.locator('.keycap')).toHaveCount(84);
+    const outside = await page.locator('.keycap').evaluateAll((keys) =>
+      keys
+        .filter((k) => {
+          const r = k.getBoundingClientRect();
+          return r.left < 0 || r.right > innerWidth || r.top < 0 || r.bottom > innerHeight;
+        })
+        .map((k) => k.getAttribute('data-slot')),
+    );
+    expect(outside).toEqual([]);
+    await expect(page.getByRole('button', { name: 'Применить', exact: true })).toBeInViewport();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    expect(overflow).toBe(false);
+  }
+  await page.locator('.editor-scroll').evaluate((e) => e.scrollTo({ top: 0 }));
+  await page.screenshot({ path: 'archive_data/ui-960-light-ru.png' });
+  await page.getByRole('button', { name: 'Параметры', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Язык', exact: true }).selectOption('en');
+  await page.getByRole('combobox', { name: 'Appearance', exact: true }).selectOption('dark');
+  await page.getByRole('button', { name: 'Keyboard', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Save action', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'archive_data/ui-960-dark-en.png' });
+  await page.setViewportSize({ width: 1480, height: 908 });
+  await page.screenshot({ path: 'archive_data/ui-1480-dark-en.png' });
+  for (const label of ['Actuation', 'Behavior']) {
+    await page.getByRole('button', { name: label, exact: true }).click();
+    const body = await page.locator('.editor-scroll').innerText();
+    expect(body).not.toMatch(/[А-Яа-яЁё]/);
+  }
+  for (const label of ['Lighting', 'Macros', 'Profiles', 'Settings']) {
+    await page.getByRole('button', { name: label, exact: true }).click();
+    await page.screenshot({ path: `archive_data/ui-${label.toLowerCase()}-en.png` });
+  }
+  expect(errors).toEqual([]);
+});
+
+test('release and a stalled IPC frame clear movement without clearing selection', async ({
+  page,
+}) => {
+  const snapshot = fixture();
+  snapshot.keys[105]!.base = { page: 2, parameters: [0, 75, 0] };
+  await page.addInitScript(
+    ({ snapshot }) => {
+      const w = window as any;
+      w.isTauri = true;
+      w.testFrame = {
+        active: true,
+        travel: [],
+        history: [],
+        colors: [],
+        colorAgeMs: null,
+        packets: 0,
+        message: null,
+        rulesEnabled: false,
+        ruleFirings: 0,
+        ruleError: null,
+      };
+      w.stall = false;
+      w.__TAURI_INTERNALS__ = {
+        invoke: async (cmd: string) => {
+          if (cmd === 'connect_device') return snapshot;
+          if (cmd === 'monitor_frame' || cmd === 'set_monitor') {
+            if (w.stall) return new Promise(() => {});
+            return structuredClone(w.testFrame);
+          }
+          return null;
+        },
+      };
+    },
+    { snapshot },
+  );
+  await page.setViewportSize({ width: 1480, height: 908 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Подключить', exact: true }).first().click();
+  await expect(page.locator('[data-slot="105"] .key-label')).toHaveText('PgUp');
+  const key = page.locator('[data-slot="49"]');
+  await key.click();
+  const sample = { slot: 49, travelUm: 2100, maxTravelUm: 3200, adc: 400, ageMs: 0 };
+  await page.evaluate((sample) => {
+    (window as any).testFrame.travel = [sample];
+  }, sample);
+  await expect(key).toHaveClass(/pressed/);
+  await expect(key).toHaveClass(/selected/);
+  const visual = await key.evaluate((e) => ({
+    outline: getComputedStyle(e).outlineStyle,
+    fill: getComputedStyle(e.querySelector('.key-travel-fill')!).width,
+  }));
+  expect(visual.outline).toBe('solid');
+  expect(parseFloat(visual.fill)).toBeGreaterThan(1);
+  await page.evaluate(() => {
+    (window as any).testFrame.travel[0].travelUm = 0;
+  });
+  await expect(key).not.toHaveClass(/pressed/);
+  await expect(key).toHaveClass(/selected/);
+  await page.evaluate(() => {
+    (window as any).testFrame.travel[0].travelUm = 2500;
+  });
+  await expect(key).toHaveClass(/pressed/);
+  await page.evaluate(() => {
+    (window as any).stall = true;
+  });
+  await expect(key).not.toHaveClass(/pressed/, { timeout: 2000 });
+  await expect(key).toHaveClass(/selected/);
+  await expect(page.locator('.inspection-travel output')).toContainText('—');
+});
+
+test('every editor reflows at minimum size, numeric depth entry is optional', async ({ page }) => {
+  await page.setViewportSize({ width: 960, height: 668 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Открыть пример', exact: true }).click();
+  await page.locator('[data-slot="105"]').click();
+  await page.getByRole('button', { name: 'Срабатывание', exact: true }).click();
+  await page.getByRole('button', { name: 'Глубокое', exact: true }).click();
+  await page.getByRole('button', { name: 'Добавить в черновик', exact: true }).click();
+  await expect(page.locator('.draft-summary')).toContainText('1');
+  await page.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await expect(page.getByRole('slider', { name: 'Точка срабатывания', exact: true })).toHaveValue(
+    '1200',
+  );
+  await page.getByRole('button', { name: 'Поведение', exact: true }).click();
+  await page.getByRole('button', { name: 'Глубокое нажатие', exact: false }).last().click();
+  await expect(page.locator('.dks-editor input[type="number"]')).toHaveCount(0);
+  for (const nav of ['Свет', 'Макросы', 'Профили', 'Параметры']) {
+    await page.getByRole('button', { name: nav, exact: true }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(960);
+    const clipped = await page.locator('button:visible,select:visible').evaluateAll((elements) =>
+      elements
+        .filter((e) => {
+          const r = e.getBoundingClientRect();
+          return r.left < 0 || r.right > innerWidth;
+        })
+        .map((e) => e.textContent),
+    );
+    expect(clipped).toEqual([]);
+  }
+});

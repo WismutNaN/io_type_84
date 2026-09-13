@@ -3,6 +3,10 @@
 export type DeviceAccess = "notImplemented" | "available";
 
 export type AppInfo = { name: string, version: string, platform: string, deviceAccess: DeviceAccess, };
+export type ComputerAction = "volumeUp" | "volumeDown" | "mute" | "playPause";
+
+export type DepthRule = { slot: number, thresholdUm: number, releaseUm: number, action: ComputerAction, };
+
 export type AppError = { code: string, message: string, };
 
 export type DeviceIdentity = { name: string, vendorId: number, productId: number, firmware: string, frameVersion: number, rtPrecision: number, };
@@ -43,4 +47,4 @@ export type KeyPress = { sequence: number, slot: number, peakUm: number, };
 
 export type LiveColor = { ledId: number, color: Rgb, };
 
-export type MonitorFrame = { active: boolean, travel: Array<KeyTravel>, history: Array<KeyPress>, colors: Array<LiveColor>, colorAgeMs: number | null, packets: number, message: string | null, };
+export type MonitorFrame = { active: boolean, travel: Array<KeyTravel>, history: Array<KeyPress>, colors: Array<LiveColor>, colorAgeMs: number | null, packets: number, message: string | null, rulesEnabled: boolean, ruleFirings: number, ruleError: string | null, };

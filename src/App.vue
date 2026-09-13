@@ -3,6 +3,13 @@ import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import KeyboardPreview from './shared/keyboard-view/KeyboardPreview.vue';
 import Inspector from './features/editor/Inspector.vue';
 import MacroEditor from './features/editor/MacroEditor.vue';
+import { t, locale, theme } from './shared/ui/preferences';
+import Icon from './shared/ui/Icon.vue';
+import TravelSlider from './shared/ui/TravelSlider.vue';
+import KeyInspection from './features/editor/KeyInspection.vue';
+import MonitorStrip from './features/editor/MonitorStrip.vue';
+import DepthActions from './features/editor/DepthActions.vue';
+import { useComputerRules } from './features/editor/computer-rules';
 import DksEditor from './features/editor/DksEditor.vue';
 import { keyboardKeys } from './shared/keyboard-view/layout';
 import { useWorkspace } from './features/editor/workspace';
@@ -42,7 +49,19 @@ const {
   profiles,
   recoveryPreview,
 } = workspace;
-const section = ref('overview'),
+const computer = useComputerRules();
+const { rules, ruleMessage } = computer;
+const ruleBusy = ref(false);
+async function saveRules(next: typeof rules.value) {
+  ruleBusy.value = true;
+  try {
+    await computer.save(next, native);
+  } finally {
+    ruleBusy.value = false;
+  }
+}
+const page = ref('keyboard');
+const section = ref('keys'),
   view = ref<'layout' | 'travel' | 'colors'>('layout'),
   selected = ref<number[]>([]),
   functionLayer = ref(false),
@@ -52,6 +71,20 @@ const section = ref('overview'),
 const profileName = ref('Мой профиль'),
   confirmDiscard = ref(false),
   confirmRefresh = ref(false);
+const tool = ref('assignment');
+watch(tool, (v) => {
+  section.value = v === 'trigger' ? 'actuation' : v === 'behavior' ? 'advanced' : 'keys';
+});
+watch(page, (v) => {
+  if (v === 'lighting') {
+    section.value = 'lighting';
+    view.value = 'colors';
+  } else {
+    section.value =
+      tool.value === 'trigger' ? 'actuation' : tool.value === 'behavior' ? 'advanced' : 'keys';
+    view.value = 'layout';
+  }
+});
 const importNotes = ref<string[]>([]);
 const gradientStart = ref('#a78bfa'),
   gradientEnd = ref('#5eead4'),
@@ -71,16 +104,6 @@ const performance = ref<PerformanceSettings>({
   bottomDeadZoneUm: 0,
   keyDelay: 0,
 });
-const items = [
-  { id: 'overview', label: 'Рабочий стол', icon: '◫' },
-  { id: 'keys', label: 'Назначения', icon: '⌘' },
-  { id: 'actuation', label: 'Ход и Rapid Trigger', icon: '↕' },
-  { id: 'lighting', label: 'Свет', icon: '◉' },
-  { id: 'advanced', label: 'Расширенные клавиши', icon: '◇' },
-  { id: 'macros', label: 'Макросы', icon: '≋' },
-  { id: 'profiles', label: 'Профили', icon: '▤' },
-];
-const title = computed(() => items.find((i) => i.id === section.value)?.label ?? 'Параметры');
 const keyLabel = (slot: number) =>
   keyboardKeys.find((k) => k.slot === slot)?.label ?? `Слот ${slot}`;
 const previewDetails = computed(() => {
@@ -96,45 +119,38 @@ const previewDetails = computed(() => {
     for (const layer of ['base', 'function'] as const)
       if (changed(a[layer], b[layer]))
         lines.push(
-          `${layer === 'function' ? 'Fn + ' : ''}${label}: ${bindingName(a[layer], label)} → ${bindingName(b[layer], label)}`,
+          `${layer === 'function' ? 'Fn + ' : ''}${label}: ${t(bindingName(a[layer], label))} → ${t(bindingName(b[layer], label))}`,
         );
     if (changed(a.actuation, b.actuation))
       lines.push(
-        `${label}: ход ${(a.actuation.triggerUm / 1000).toFixed(2)} → ${(b.actuation.triggerUm / 1000).toFixed(2)} мм; RT ${b.actuation.rapidTrigger ? `${(b.actuation.pressUm / 1000).toFixed(2)} / ${(b.actuation.releaseUm / 1000).toFixed(2)} мм` : 'выключен'}`,
+        `${label}: ${t('Ход')} ${(a.actuation.triggerUm / 1000).toFixed(2)} → ${(b.actuation.triggerUm / 1000).toFixed(2)} ${t('мм')}; RT ${b.actuation.rapidTrigger ? `${(b.actuation.pressUm / 1000).toFixed(2)} / ${(b.actuation.releaseUm / 1000).toFixed(2)} мм` : t('выключен')}`,
       );
     if (changed(a.color, b.color))
-      lines.push(`${label}: цвет ${hexColor(a.color)} → ${hexColor(b.color)}`);
+      lines.push(`${label}: ${t('Цвет клавиш')} ${hexColor(a.color)} → ${hexColor(b.color)}`);
   }
   if (changed(before.lighting, after.lighting))
     lines.push(
-      `Свет: ${effects[before.lighting.mode] ?? before.lighting.mode} → ${effects[after.lighting.mode] ?? after.lighting.mode}; яркость ${before.lighting.brightness} → ${after.lighting.brightness}; скорость ${before.lighting.speed} → ${after.lighting.speed}; цвет ${hexColor(after.lighting.color)}`,
+      `${t('Свет')}: ${t(effects[before.lighting.mode] ?? String(before.lighting.mode))} → ${t(effects[after.lighting.mode] ?? String(after.lighting.mode))}; ${t('Яркость')} ${before.lighting.brightness} → ${after.lighting.brightness}; ${t('Скорость')} ${before.lighting.speed} → ${after.lighting.speed}; ${t('Цвет эффекта')} ${hexColor(after.lighting.color)}`,
     );
   if (changed(before.performance, after.performance))
     lines.push(
-      `Частота ${{ 3: 1000, 5: 4000, 6: 8000 }[after.performance.reportRate] ?? '?'} Гц; мёртвые зоны ${(after.performance.topDeadZoneUm / 1000).toFixed(2)} / ${(after.performance.bottomDeadZoneUm / 1000).toFixed(2)} мм`,
+      `${t('Частота опроса')} ${{ 3: 1000, 5: 4000, 6: 8000 }[after.performance.reportRate] ?? '?'} Hz; ${t('Свободный ход сверху')} / ${t('Свободный ход снизу')} ${(after.performance.topDeadZoneUm / 1000).toFixed(2)} / ${(after.performance.bottomDeadZoneUm / 1000).toFixed(2)} мм`,
     );
   if (changed(before.macros, after.macros))
     lines.push(
-      `Каталог макросов: ${before.macros.length} → ${after.macros.length}; всего ${after.macros.reduce((n, m) => n + m.steps.length, 0)} действий`,
+      `${t('Макросы')}: ${before.macros.length} → ${after.macros.length}; ${t('действий')}: ${after.macros.reduce((n, m) => n + m.steps.length, 0)}`,
     );
   const dks = after.dks.filter((d) => changed(before.dks[d.index], d));
-  if (dks.length) lines.push(`Изменены записи DKS: ${dks.map((d) => d.index + 1).join(', ')}`);
+  if (dks.length) lines.push(`DKS: ${dks.map((d) => d.index + 1).join(', ')}`);
   return lines;
 });
-const focused = computed(() => displayLive.value.travel.find((k) => k.slot === selected.value[0]));
-const freshTravel = computed(() =>
-  live.value.active ? displayLive.value.travel.filter((k) => k.ageMs < 600) : [],
-);
-const moving = computed(() => freshTravel.value.filter((k) => k.travelUm >= 300));
 const colorHex = computed({
   get: () => hexColor(light.value.color),
   set: (value: string) => {
     if (/^#[0-9a-f]{6}$/i.test(value)) light.value.color = parseColor(value);
   },
 });
-const customColorCount = computed(
-  () => draft.value?.keys.filter((k) => k.color.r || k.color.g || k.color.b).length ?? 0,
-);
+
 watch(
   draft,
   (value) => {
@@ -148,6 +164,10 @@ watch(
 watch(section, (value) => {
   view.value = value === 'lighting' ? 'colors' : value === 'actuation' ? 'travel' : 'layout';
   window.scrollTo({ top: 0, behavior: 'auto' });
+});
+watch([page, tool, () => selected.value[0]], async () => {
+  await nextTick();
+  document.querySelector('.editor-scroll')?.scrollTo({ top: 0 });
 });
 function select(slot: number, toggle: boolean, paint = false) {
   if (paint) {
@@ -311,7 +331,7 @@ onBeforeUnmount(() => {
   if (connected.value) void workspace.disconnect();
 });
 const blockNames: Record<string, string> = {
-  game: 'Общие параметры',
+  game: 'Клавиатура',
   base: 'Базовый слой',
   function: 'Fn-слой',
   lighting: 'Эффект подсветки',
@@ -352,625 +372,560 @@ function modalKeys(event: KeyboardEvent) {
   }
 }
 </script>
-
 <template>
   <div class="app-shell">
-    <aside class="sidebar">
-      <a class="brand" href="#" @click.prevent="section = 'overview'"
-        ><span class="brand-mark">io</span>
-        <div>TYPE 84<small>Личное пространство</small></div></a
-      >
-      <div class="device-card">
-        <div class="device-line">
-          <span class="device-mini">⌨</span
-          ><span class="status-dot" :class="{ online: connected }"></span>
-        </div>
-        <b>Magnetic White</b
-        ><small>{{
-          connected
-            ? 'USB · прошивка ' + snapshot?.identity.firmware
-            : native
-              ? 'Готова к подключению'
-              : 'Предпросмотр в браузере'
-        }}</small
-        ><button
-          v-if="native"
-          class="connect-button"
-          :disabled="!!busy"
-          @click="connected ? workspace.disconnect() : workspace.connect()"
-        >
-          {{ connected ? 'Отключить' : busy || 'Подключить клавиатуру' }} <span>↗</span>
-        </button>
-      </div>
-      <div class="nav-label">ВАША КЛАВИАТУРА</div>
-      <nav aria-label="Разделы">
+    <header class="app-header">
+      <strong class="app-brand">io <span>Type 84</span></strong>
+      <nav class="main-nav" :aria-label="t('Разделы')">
         <button
-          v-for="item in items"
+          v-for="item in [
+            { id: 'keyboard', label: 'Клавиатура', icon: 'keyboard' },
+            { id: 'lighting', label: 'Свет', icon: 'light' },
+            { id: 'macros', label: 'Макросы', icon: 'macro' },
+            { id: 'profiles', label: 'Профили', icon: 'profile' },
+            { id: 'settings', label: 'Параметры', icon: 'settings' },
+          ]"
           :key="item.id"
-          class="nav-item"
-          :class="{ active: section === item.id }"
-          :aria-current="section === item.id ? 'page' : undefined"
-          @click="section = item.id"
+          :class="{ active: page === item.id }"
+          :aria-current="page === item.id ? 'page' : undefined"
+          @click="page = item.id"
         >
-          <span>{{ item.icon }}</span
-          >{{ item.label }}
+          <Icon :name="item.icon" /><span>{{ t(item.label) }}</span>
         </button>
       </nav>
-      <div class="sidebar-bottom">
-        <div class="local-badge">
-          <span>◇</span>
-          <div>Всё на вашем компьютере<small>Профили и история сеанса</small></div>
-        </div>
-        <button
-          class="nav-item"
-          :class="{ active: section === 'settings' }"
-          @click="section = 'settings'"
-        >
-          <span>⚙</span>Параметры
-        </button>
-        <div class="sidebar-version">Открытый проект <span>0.1.0</span></div>
-      </div>
-    </aside>
-    <div class="workspace">
-      <header class="topbar">
-        <div class="breadcrumb">
-          IO Type 84 <span>/</span><strong>{{ title }}</strong>
-        </div>
-        <div class="top-actions">
-          <span class="connection-pill" :class="{ online: connected }"
-            ><i></i
-            >{{ connected ? 'Подключена' : snapshot ? 'Локальный снимок' : 'Без устройства' }}</span
-          ><button
-            class="icon-button"
-            :disabled="!connected || !!busy"
-            title="Перечитать состояние"
-            @click="edits.length ? (confirmRefresh = true) : workspace.refresh()"
-          >
-            ↻
-          </button>
-        </div>
-      </header>
-      <main>
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">НАСТРОЙТЕ ПОД СВОЙ РИТМ</p>
-            <h1>{{ section === 'overview' ? 'Каждая клавиша — ваша.' : title }}</h1>
-            <p class="page-description">
-              {{
-                section === 'overview'
-                  ? 'Настройки, живой ход и свет — в одном пространстве.'
-                  : section === 'lighting'
-                    ? 'От одного цвета до градиента на всей клавиатуре.'
-                    : section === 'actuation'
-                      ? 'Найдите точку, в которой движение становится действием.'
-                      : section === 'keys'
-                        ? 'Одно действие или группа клавиш. Базовый слой и Fn.'
-                        : section === 'advanced'
-                          ? 'Разные действия по ходу, времени и сочетанию нажатий.'
-                          : section === 'macros'
-                            ? 'Соберите последовательность и назначьте её на клавишу.'
-                            : section === 'profiles'
-                              ? 'Сохраните привычные настройки и возвращайтесь к ним.'
-                              : 'Подключение, производительность и восстановление.'
-              }}
-            </p>
+      <button
+        class="connection-button"
+        :class="{ connected }"
+        :disabled="!native || !!busy"
+        @click="connected ? workspace.disconnect() : workspace.connect()"
+      >
+        <span class="status-dot"></span
+        >{{ t(connected ? 'Подключено' : native ? 'Подключить' : 'Предпросмотр') }}
+      </button>
+    </header>
+    <div v-if="error" class="message error-message" role="alert">
+      <span>{{ t(error) }}</span
+      ><button :aria-label="t('Закрыть')" @click="error = ''">×</button>
+    </div>
+    <main
+      class="main-content"
+      :class="{
+        'has-keyboard': page === 'keyboard' || page === 'lighting',
+        'keyboard-workspace': page === 'keyboard',
+        'lighting-page': page === 'lighting',
+      }"
+    >
+      <template v-if="page === 'keyboard' || page === 'lighting'">
+        <section class="keyboard-area">
+          <div class="keyboard-toolbar">
+            <div class="segmented" v-if="page === 'keyboard'">
+              <button
+                :class="{ active: !functionLayer }"
+                :aria-pressed="!functionLayer"
+                @click="functionLayer = false"
+              >
+                {{ t('Основной') }}</button
+              ><button
+                :class="{ active: functionLayer }"
+                :aria-pressed="functionLayer"
+                @click="functionLayer = true"
+              >
+                Fn
+              </button>
+            </div>
+            <div class="segmented" v-else>
+              <button :class="{ active: !actualColors }" @click="actualColors = false">
+                {{ t('Заданные цвета') }}</button
+              ><button :class="{ active: actualColors }" @click="actualColors = true">
+                {{ t('Текущие цвета') }}
+              </button>
+            </div>
+            <form class="key-search" @submit.prevent="findKey">
+              <Icon name="search" /><input
+                v-model="search"
+                :placeholder="t('Найти клавишу')"
+                :aria-label="t('Найти клавишу')"
+                type="search"
+              />
+            </form>
+            <div class="group-actions">
+              <button
+                class="text-button"
+                :class="{ chosen: multi }"
+                :aria-pressed="multi"
+                @click="multi = !multi"
+              >
+                {{ t('Группа') }}</button
+              ><button class="text-button" @click="group('wasd')">WASD</button
+              ><button class="text-button" @click="group('all')">{{ t('Все') }}</button>
+            </div>
+            <button
+              class="monitor-toggle"
+              :class="{ active: live.active }"
+              :aria-pressed="live.active"
+              :disabled="!connected || !!busy"
+              @click="workspace.monitor()"
+            >
+              <Icon name="monitor" />{{ t(live.active ? 'Остановить' : 'Наблюдать') }}
+            </button>
           </div>
-          <button
-            v-if="connected"
-            class="monitor-button"
-            :class="{ active: live.active }"
-            :disabled="!!busy"
-            @click="workspace.monitor()"
+          <KeyboardPreview
+            :selected="selected"
+            :snapshot="draft"
+            :live="displayLive"
+            :view="view"
+            :function-layer="functionLayer"
+            :multi="multi"
+            :actual-colors="actualColors"
+            :rules="rules"
+            @select="select"
+          />
+          <p
+            v-if="page === 'lighting' && actualColors && !live.colors.length"
+            class="inline-notice"
           >
-            <span>{{ live.active ? '■' : '◉' }}</span
-            >{{ live.active ? 'Остановить наблюдение' : 'Наблюдать нажатия' }}
-          </button>
-        </div>
-        <div v-if="error" class="message error-message" role="alert">
-          <span>!</span>
-          <p>{{ error }}</p>
-          <button title="Скрыть ошибку" @click="error = ''">×</button>
-        </div>
-        <div v-else-if="notice" class="message notice-message" role="status">
-          <span>✓</span>
-          <p>{{ notice }}</p>
-          <button title="Скрыть уведомление" @click="notice = ''">×</button>
-        </div>
-        <section
-          v-if="importNotes.length"
-          class="surface import-report"
-          aria-label="Результат импорта"
-        >
-          <h3>Результат импорта IO Vision</h3>
-          <ul>
-            <li v-for="note in importNotes" :key="note">{{ note }}</li>
-          </ul>
-          <button class="text-button" @click="importNotes = []">Скрыть отчёт</button>
+            {{
+              t(
+                'Клавиатура пока не отдаёт подтверждённые текущие цвета. Штрих означает неизвестный цвет.',
+              )
+            }}
+          </p>
+          <MonitorStrip
+            v-if="live.active || live.history.length"
+            :live="displayLive"
+            :selected="selected"
+            @select="select($event, false)"
+            @clear="workspace.clearHistory()"
+          />
+          <KeyInspection
+            :snapshot="draft"
+            :selected="selected"
+            :live="displayLive"
+            :function-layer="functionLayer"
+          />
         </section>
-        <div v-if="!snapshot" class="welcome-card">
-          <div>
-            <p class="eyebrow">НАЧНЁМ С ПОДКЛЮЧЕНИЯ</p>
-            <h2>Познакомимся с вашей клавиатурой</h2>
-            <p>
-              {{
-                native
-                  ? 'Подключите IO White по USB. Приложение прочитает настройки и откроет редакторы.'
-                  : 'В браузере доступны локальные профили и пример редактора. Для USB запустите настольное приложение.'
-              }}
-            </p>
-            <div class="welcome-actions">
-              <button v-if="native" class="primary" :disabled="!!busy" @click="workspace.connect()">
-                {{ busy || 'Подключить по USB' }}</button
-              ><button class="secondary" @click="openExample">Открыть пример профиля</button
-              ><label class="text-button file-button"
-                >Импорт JSON<input
-                  type="file"
-                  accept=".json,application/json"
-                  @change="importProfile"
-              /></label>
+        <div class="editor-scroll" tabindex="-1">
+          <div v-if="!draft" class="empty-workspace">
+            <Icon name="keyboard" />
+            <h2>{{ t('Подключите клавиатуру') }}</h2>
+            <p>{{ t('Прочитайте её настройки или откройте пример, чтобы изучить редактор.') }}</p>
+            <div>
+              <button class="primary" :disabled="!native || !!busy" @click="workspace.connect()">
+                {{ t('Подключить') }}</button
+              ><button class="secondary" @click="openExample">{{ t('Открыть пример') }}</button>
             </div>
           </div>
-          <div class="welcome-graphic" aria-hidden="true">
-            <i>W</i>
-            <div><i>A</i><i>S</i><i>D</i></div>
-            <span>Всё начинается с одного нажатия</span>
-          </div>
-        </div>
-        <div v-if="!['profiles', 'settings'].includes(section)" class="editor-grid">
-          <div class="editor-main">
-            <section class="surface keyboard-surface">
-              <div class="keyboard-heading">
-                <div>
-                  <h2>Ваша раскладка</h2>
-                  <span>{{ functionLayer ? 'Fn-слой' : 'Базовый слой' }} · 84 клавиши</span>
-                </div>
-                <div class="segmented" aria-label="Слой">
-                  <button :class="{ active: !functionLayer }" @click="functionLayer = false">
-                    Базовый</button
-                  ><button :class="{ active: functionLayer }" @click="functionLayer = true">
-                    Fn
-                  </button>
-                </div>
-              </div>
-              <div class="keyboard-toolbar">
-                <div class="segmented">
-                  <button :class="{ active: view === 'layout' }" @click="view = 'layout'">
-                    Назначения</button
-                  ><button :class="{ active: view === 'travel' }" @click="view = 'travel'">
-                    Ход</button
-                  ><button :class="{ active: view === 'colors' }" @click="view = 'colors'">
-                    Цвета
-                  </button>
-                </div>
-                <select v-if="view === 'colors'" v-model="actualColors" aria-label="Источник цвета">
-                  <option :value="false">Заданный цвет</option>
-                  <option :value="true">Сообщённый устройством</option></select
-                ><span v-else class="quiet-label">{{
-                  live.active ? '● Измерение активно' : 'IO Type 84 Magnetic'
-                }}</span>
-              </div>
-              <KeyboardPreview
+          <template v-else-if="page === 'keyboard'">
+            <nav class="editor-tabs" :aria-label="t('Настройка клавиш')">
+              <button
+                v-for="tab in [
+                  { id: 'assignment', label: 'Действия' },
+                  { id: 'trigger', label: 'Срабатывание' },
+                  { id: 'behavior', label: 'Поведение' },
+                ]"
+                :key="tab.id"
+                :class="{ active: tool === tab.id }"
+                @click="tool = tab.id"
+              >
+                {{ t(tab.label) }}</button
+              ><span class="selection-summary">{{
+                t(
+                  String(
+                    selected.length === 1
+                      ? keyLabel(selected[0]!)
+                      : selected.length + ' ' + t('выбрано'),
+                  ),
+                )
+              }}</span>
+            </nav>
+            <div class="editor-columns" :class="{ 'behavior-columns': tool === 'behavior' }">
+              <Inspector
                 :snapshot="draft"
                 :selected="selected"
-                :live="displayLive"
-                :view="view"
+                :section="section"
                 :function-layer="functionLayer"
-                :multi="multi"
-                :actual-colors="actualColors"
-                @select="select"
+                :disabled="!!busy"
+                :live="displayLive"
+                @stage="workspace.stage"
               />
-              <div class="selection-toolbar">
-                <span>Выбрать</span><button @click="group('all')">Все</button
-                ><button @click="group('wasd')">WASD</button
-                ><button @click="group('arrows')">Стрелки</button
-                ><button :disabled="!selected.length" @click="group('none')">Снять</button
-                ><label class="check-line"><input v-model="multi" type="checkbox" />Группа</label>
-                <form class="key-search" @submit.prevent="findKey">
-                  <input
-                    v-model="search"
-                    placeholder="Найти клавишу"
-                    aria-label="Поиск физической клавиши"
-                  /><button title="Найти">⌕</button>
-                </form>
+              <div v-if="tool === 'assignment' && selected.length === 1" class="companion-editor">
+                <DepthActions
+                  :selected="selected"
+                  :rules="rules"
+                  :live="displayLive"
+                  :disabled="ruleBusy || !!busy || functionLayer"
+                  @save="saveRules"
+                />
+                <div class="software-status">
+                  <label class="switch-line"
+                    ><span
+                      >{{ t('Действия компьютера')
+                      }}<small>{{
+                        t('Работают при открытом приложении и наблюдении')
+                      }}</small></span
+                    ><input
+                      type="checkbox"
+                      role="switch"
+                      :checked="live.rulesEnabled"
+                      :disabled="!native || !live.active || !rules.length || ruleBusy || !!busy"
+                      @change="computer.enable(($event.target as HTMLInputElement).checked)"
+                  /></label>
+                  <p v-if="functionLayer" class="hint">
+                    {{
+                      t(
+                        'Условия глубины используют физическую клавишу независимо от Fn. Настройте их в основном слое.',
+                      )
+                    }}
+                  </p>
+                  <p v-if="ruleMessage || live.ruleError" class="hint" role="status">
+                    {{ t(live.ruleError || ruleMessage) }}
+                  </p>
+                  <small v-if="live.rulesEnabled"
+                    >{{ t('Выполнено') }}: {{ live.ruleFirings }}</small
+                  >
+                </div>
               </div>
-            </section>
-            <section
-              v-if="section === 'overview' || section === 'actuation'"
-              class="live-dashboard"
-            >
-              <div class="surface live-meter">
-                <div class="panel-heading">
-                  <h3>Живой ход</h3>
-                  <span class="live-tag" :class="{ active: live.active }">{{
-                    live.active ? 'LIVE' : 'ПАУЗА'
-                  }}</span>
-                </div>
-                <div class="depth-number">
-                  {{
-                    live.active && focused && focused.ageMs < 1500
-                      ? (focused.travelUm / 1000).toFixed(2)
-                      : '—'
-                  }}<small>мм</small
-                  ><span>{{
-                    selected.length === 1 ? keyLabel(selected[0]!) : 'Выберите одну клавишу'
-                  }}</span>
-                </div>
-                <div class="depth-line">
-                  <i
-                    :style="{
-                      width: `${live.active && focused && focused.ageMs < 1500 ? Math.min(focused.travelUm / 3200, 1) * 100 : 0}%`,
-                    }"
-                  ></i>
-                </div>
+              <div v-else-if="tool === 'trigger' && selected.length" class="trigger-guide">
+                <h3>{{ t('Проверьте нажатие') }}</h3>
                 <p>
                   {{
-                    live.active
-                      ? `${moving.length} в движении · ${freshTravel.length} свежих измерений`
-                      : 'Запустите наблюдение, чтобы увидеть глубину нажатия.'
+                    t(
+                      'Зелёная отметка показывает живой ход, синяя — точку срабатывания. Включите наблюдение и нажмите выбранную клавишу.',
+                    )
+                  }}
+                </p>
+                <div class="travel-illustration" aria-hidden="true">
+                  <div class="switch-cap"></div>
+                  <div class="switch-stem"></div>
+                  <div class="switch-base"></div>
+                </div>
+                <p class="hint">
+                  {{
+                    t(
+                      'Измеряется глубина хода, а не сила в граммах. Пропавший сигнал отображается как неизвестный.',
+                    )
                   }}
                 </p>
               </div>
-              <div class="surface session-history">
-                <div class="panel-heading">
-                  <h3>
-                    Последние нажатия <span>{{ live.history.length }}/20</span>
-                  </h3>
+              <DksEditor
+                v-else-if="tool === 'behavior'"
+                :snapshot="draft"
+                :selected="selected"
+                :function-layer="functionLayer"
+                :disabled="!!busy"
+                @stage="workspace.stage"
+              />
+            </div>
+          </template>
+          <template v-else>
+            <div class="lighting-workspace">
+              <section class="light-effects">
+                <h2>{{ t('Эффект') }}</h2>
+                <div class="effect-grid">
                   <button
-                    class="text-button"
-                    :disabled="!live.history.length"
-                    @click="workspace.clearHistory()"
+                    v-for="(name, index) in effects"
+                    :key="index"
+                    :class="{ chosen: light.mode === index }"
+                    @click="light.mode = index"
                   >
-                    Очистить
+                    <span class="effect-swatch" :data-effect="index"></span>{{ t(name) }}
                   </button>
                 </div>
-                <div v-if="live.history.length" class="history-chips">
-                  <button
-                    v-for="press in live.history"
-                    :key="press.sequence"
-                    @click="selected = [press.slot]"
-                  >
-                    <b>{{ keyLabel(press.slot) }}</b
-                    ><small>{{ (press.peakUm / 1000).toFixed(2) }} мм</small>
+              </section>
+              <section class="light-adjustments">
+                <label
+                  >{{ t('Яркость')
+                  }}<input v-model.number="light.brightness" type="range" min="0" max="5" /></label
+                ><label
+                  >{{ t('Скорость')
+                  }}<input v-model.number="light.speed" type="range" min="0" max="5" /></label
+                ><label
+                  >{{ t('Цвет эффекта')
+                  }}<select v-model.number="light.colorMode">
+                    <option :value="0">{{ t('Один цвет') }}</option>
+                    <option :value="1">RGB</option>
+                  </select></label
+                >
+                <div v-if="light.colorMode === 0" class="color-input">
+                  <input v-model="colorHex" type="color" :aria-label="t('Цвет эффекта')" /><span>{{
+                    colorHex
+                  }}</span>
+                </div>
+                <label
+                  >{{ t('Направление')
+                  }}<select v-model.number="light.direction">
+                    <option :value="0">{{ t('Вперёд') }}</option>
+                    <option :value="1">{{ t('Назад') }}</option>
+                  </select></label
+                ><button
+                  class="primary"
+                  :disabled="!!busy"
+                  @click="workspace.stage({ kind: 'lighting', value: clone(light) })"
+                >
+                  {{ t('Добавить в черновик') }}
+                </button>
+              </section>
+              <section class="paint-editor">
+                <h2>{{ t('Цвет клавиш') }}</h2>
+                <Inspector
+                  :snapshot="draft"
+                  :selected="selected"
+                  section="lighting"
+                  :function-layer="functionLayer"
+                  :disabled="!!busy"
+                  :live="displayLive"
+                  @stage="workspace.stage"
+                />
+                <details>
+                  <summary>{{ t('Градиент') }}</summary>
+                  <div
+                    class="gradient-preview"
+                    :style="{
+                      background: `linear-gradient(${gradientDirection === 'horizontal' ? '90' : '180'}deg,${gradientStart},${gradientEnd})`,
+                    }"
+                  ></div>
+                  <div class="gradient-controls">
+                    <label>{{ t('Начало') }}<input v-model="gradientStart" type="color" /></label
+                    ><label>{{ t('Конец') }}<input v-model="gradientEnd" type="color" /></label
+                    ><select v-model="gradientDirection" :aria-label="t('Направление')">
+                      <option value="horizontal">{{ t('Слева направо') }}</option>
+                      <option value="vertical">{{ t('Сверху вниз') }}</option>
+                    </select>
+                  </div>
+                  <button class="secondary full" :disabled="!!busy" @click="gradient">
+                    {{ t('Создать градиент') }}
                   </button>
-                </div>
-                <div v-else class="history-empty">
-                  <span>↓</span>
-                  <p>
-                    Здесь появятся ваши нажатия<small
-                      >Храним только последние 20 событий в памяти.</small
-                    >
+                </details>
+                <details>
+                  <summary>{{ t('LED-панель') }}</summary>
+                  <p class="hint">
+                    {{
+                      t(
+                        'Fn+G — глубина RT, Fn+K — наложение, Fn+L — эффект. Их можно переназначить в действиях клавиатуры. Прямой редактор панели появится после проверки протокола.',
+                      )
+                    }}
                   </p>
-                </div>
-                <p class="hint">
-                  История физического движения от 0,10 мм; она не заменяет события ввода и логику
-                  RT.
-                </p>
-              </div>
-            </section>
-            <p
-              v-if="live.message && (section === 'overview' || section === 'lighting')"
-              class="hint live-note"
-            >
-              {{ live.message }}
-            </p>
-            <template v-if="section === 'lighting' && draft"
-              ><section class="surface editor-panel">
-                <div class="panel-heading">
-                  <div>
-                    <p class="eyebrow">ЭФФЕКТ НА КЛАВИАТУРЕ</p>
-                    <h2>Свет с характером</h2>
-                  </div>
-                  <span class="tag">{{ effects[draft.lighting.mode] ?? 'Неизвестный режим' }}</span>
-                </div>
-                <div class="lighting-controls">
-                  <div class="effect-grid">
-                    <button
-                      v-for="(name, index) in effects"
-                      :key="index"
-                      :class="{ chosen: light.mode === index }"
-                      @click="light.mode = index"
-                    >
-                      <span class="effect-symbol">{{
-                        [
-                          '○',
-                          '●',
-                          '↓',
-                          '↑',
-                          '✧',
-                          '⋮',
-                          '◉',
-                          '◌',
-                          '◐',
-                          '◎',
-                          '↔',
-                          '≈',
-                          '↻',
-                          '✺',
-                          'ϟ',
-                          '◯',
-                          '≋',
-                          '◍',
-                          '╱',
-                          '⇄',
-                          '▦',
-                        ][index]
-                      }}</span
-                      >{{ name }}
-                    </button>
-                  </div>
-                  <div class="light-sliders">
-                    <label
-                      >Яркость <span>{{ light.brightness }} / 5</span
-                      ><input
-                        v-model.number="light.brightness"
-                        type="range"
-                        min="0"
-                        max="5" /></label
-                    ><label
-                      >Скорость <span>{{ light.speed }} / 5</span
-                      ><input v-model.number="light.speed" type="range" min="0" max="5" /></label
-                    ><label
-                      >Режим цвета<select v-model.number="light.colorMode">
-                        <option :value="0">Один цвет</option>
-                        <option :value="1">RGB</option>
-                      </select></label
-                    ><label
-                      >Направление<select v-model.number="light.direction">
-                        <option :value="0">Вперёд</option>
-                        <option :value="1">Назад</option>
-                      </select></label
-                    >
-                    <div class="color-input">
-                      <input v-model="colorHex" type="color" aria-label="Цвет эффекта" /><input
-                        v-model="colorHex"
-                        maxlength="7"
-                        aria-label="HEX эффекта"
-                      />
-                    </div>
-                    <button
-                      class="primary full"
-                      :disabled="!!busy"
-                      @click="workspace.stage({ kind: 'lighting', value: clone(light) })"
-                    >
-                      Добавить эффект в черновик
-                    </button>
-                  </div>
-                </div>
+                </details>
               </section>
-              <section class="surface editor-panel">
-                <div class="panel-heading">
-                  <div>
-                    <p class="eyebrow">ВАША ПАЛИТРА</p>
-                    <h2>Градиент одним движением</h2>
-                  </div>
-                  <span class="tag">{{ selected.length || 84 }} клавиш</span>
-                </div>
-                <div
-                  class="gradient-preview"
-                  :style="{
-                    background: `linear-gradient(${gradientDirection === 'horizontal' ? '90' : '180'}deg,${gradientStart},${gradientEnd})`,
-                  }"
-                ></div>
-                <div class="gradient-controls">
-                  <label>Начало<input v-model="gradientStart" type="color" /></label><span>→</span
-                  ><label>Конец<input v-model="gradientEnd" type="color" /></label
-                  ><label
-                    >Направление<select v-model="gradientDirection">
-                      <option value="horizontal">Слева направо</option>
-                      <option value="vertical">Сверху вниз</option>
-                    </select></label
-                  ><button class="primary" @click="gradient">Создать градиент</button>
-                </div>
-                <p class="hint">
-                  {{ customColorCount }} слотов с заданным RGB. Градиент включит «Свои цвета».
-                  Изменения пока останутся в черновике.
-                </p>
-              </section>
-              <section class="surface panel-research">
-                <span>▥</span>
-                <div>
-                  <h3>LED-панель</h3>
-                  <p>
-                    В профиле IO: Fn+G — глубина RT, Fn+K — наложение, Fn+L — эффект полосы. Эти
-                    действия доступны в «Назначения → Действие клавиатуры / панели». Прямое
-                    управление цветами и геометрия панели ещё исследуются.
-                  </p>
-                </div>
-              </section></template
-            >
-            <DksEditor
-              v-if="section === 'advanced' && draft"
-              :snapshot="draft"
-              :selected="selected"
-              :function-layer="functionLayer"
-              :disabled="!!busy"
-              @stage="workspace.stage"
-            />
-            <MacroEditor
-              v-if="section === 'macros' && draft"
-              :snapshot="draft"
-              :disabled="!!busy"
-              @stage="workspace.stage"
-            />
-          </div>
-          <Inspector
+            </div>
+          </template>
+        </div>
+      </template>
+      <div v-else class="page-scroll">
+        <template v-if="page === 'macros'"
+          ><MacroEditor
+            v-if="draft"
             :snapshot="draft"
-            :selected="selected"
-            :section="section"
-            :function-layer="functionLayer"
             :disabled="!!busy"
             @stage="workspace.stage"
           />
-        </div>
-        <section v-if="section === 'profiles'" class="surface editor-panel">
+          <div v-else class="empty-workspace">
+            <h2>{{ t('Сначала откройте профиль') }}</h2>
+            <button
+              class="secondary"
+              @click="
+                openExample();
+                page = 'macros';
+              "
+            >
+              {{ t('Открыть пример') }}
+            </button>
+          </div></template
+        >
+        <section v-if="page === 'settings'" class="preferences-panel">
+          <h2>{{ t('Приложение') }}</h2>
+          <label
+            >{{ t('Оформление')
+            }}<select v-model="theme" :aria-label="t('Оформление')">
+              <option value="system">{{ t('Как в системе') }}</option>
+              <option value="light">{{ t('Светлое') }}</option>
+              <option value="dark">{{ t('Тёмное') }}</option>
+            </select></label
+          ><label
+            >{{ t('Язык')
+            }}<select v-model="locale" :aria-label="t('Язык')">
+              <option value="ru">{{ t('Русский') }}</option>
+              <option value="en">English</option>
+            </select></label
+          >
+        </section>
+        <section v-if="page === 'profiles'" class="surface editor-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">ЛОКАЛЬНАЯ БИБЛИОТЕКА</p>
-              <h2>Ваши привычные настройки</h2>
+              <h2>{{ t('Профили') }}</h2>
             </div>
-            <span class="tag">{{ profiles.length }} профилей</span>
+            <span class="tag">{{ profiles.length }}{{ t('профилей') }}</span>
           </div>
           <div class="profile-create">
             <input
               v-model="profileName"
               maxlength="100"
-              placeholder="Название профиля"
-              aria-label="Название профиля"
+              :placeholder="t('Название профиля')"
+              :aria-label="t('Название профиля')"
             /><button
               class="primary"
               :disabled="!draft"
               @click="workspace.saveProfile(profileName)"
             >
-              Сохранить текущий</button
+              {{ t('Сохранить текущий') }}</button
             ><button
               class="secondary"
               :disabled="!draft"
               @click="workspace.exportProfile(profileName)"
             >
-              Экспорт JSON</button
+              {{ t('Экспорт JSON') }}</button
             ><label class="secondary file-button"
-              >Импорт<input type="file" accept=".json,application/json" @change="importProfile"
+              >{{ t('Импорт')
+              }}<input type="file" accept=".json,application/json" @change="importProfile"
             /></label>
           </div>
           <p class="hint">
-            Ctrl+S сохраняет локальный профиль. Применение к клавиатуре выполняется отдельно. Формат
-            Поддерживаются собственный JSON и проверенные поля экспорта IO Vision. Неоднозначные
-            поля сайта сохраняют значения исходного снимка.
+            {{
+              t(
+                'Ctrl+S сохраняет локальный профиль. Применение к клавиатуре выполняется отдельно. Формат Поддерживаются собственный JSON и проверенные поля экспорта IO Vision. Неоднозначные поля сайта сохраняют значения исходного снимка.',
+              )
+            }}
           </p>
           <div v-if="profiles.length" class="profile-grid">
             <article v-for="profile in profiles" :key="profile.name" class="profile-card">
               <span>▤</span>
               <h3>{{ profile.name }}</h3>
-              <p>{{ new Date(profile.savedAt).toLocaleString('ru-RU') }}</p>
+              <p>{{ new Date(profile.savedAt).toLocaleString(locale) }}</p>
               <div>
-                <button class="secondary" @click="loadProfile(profile)">Открыть в черновике</button
+                <button class="secondary" @click="loadProfile(profile)">
+                  {{ t('Открыть в черновике') }}</button
                 ><button class="text-button" @click="workspace.deleteProfile(profile.name)">
-                  Удалить
+                  {{ t('Удалить') }}
                 </button>
               </div>
             </article>
           </div>
           <p v-else class="empty-inline">
-            Сохраните первую настройку, чтобы быстро вернуться к ней.
+            {{ t('Сохраните первую настройку, чтобы быстро вернуться к ней.') }}
           </p>
         </section>
-        <section v-if="section === 'settings'" class="settings-grid">
+        <section v-if="page === 'settings'" class="settings-grid">
           <div class="surface editor-panel">
-            <p class="eyebrow">ПРОИЗВОДИТЕЛЬНОСТЬ</p>
-            <h2>Общие параметры</h2>
+            <h2>{{ t('Клавиатура') }}</h2>
             <fieldset :disabled="!draft || !!busy">
               <label
-                >Частота опроса<select v-model.number="performance.reportRate">
-                  <option :value="3">1000 Гц</option>
-                  <option :value="5">4000 Гц</option>
-                  <option :value="6">8000 Гц</option>
+                >{{ t('Частота опроса')
+                }}<select v-model.number="performance.reportRate">
+                  <option :value="3">{{ t('1000 Гц') }}</option>
+                  <option :value="5">{{ t('4000 Гц') }}</option>
+                  <option :value="6">{{ t('8000 Гц') }}</option>
                 </select></label
-              ><label
-                >Верхняя мёртвая зона, мм<input
-                  :value="performance.topDeadZoneUm / 1000"
-                  type="number"
-                  min="0"
-                  max="0.5"
-                  step="0.01"
-                  @change="
-                    performance.topDeadZoneUm = Math.round(
-                      Number(($event.target as HTMLInputElement).value) * 1000,
-                    )
-                  " /></label
-              ><label
-                >Нижняя мёртвая зона, мм<input
-                  :value="performance.bottomDeadZoneUm / 1000"
-                  type="number"
-                  min="0"
-                  max="0.5"
-                  step="0.01"
-                  @change="
-                    performance.bottomDeadZoneUm = Math.round(
-                      Number(($event.target as HTMLInputElement).value) * 1000,
-                    )
-                  " /></label
-              ><button
+              >
+              <TravelSlider
+                v-model="performance.topDeadZoneUm"
+                :label="t('Свободный ход сверху')"
+                :min="0"
+                :max="500"
+                :low="t('Без зоны')"
+                :high="t('Больше')"
+              /><TravelSlider
+                v-model="performance.bottomDeadZoneUm"
+                :label="t('Свободный ход снизу')"
+                :min="0"
+                :max="500"
+                :low="t('Без зоны')"
+                :high="t('Больше')"
+              />
+              <button
                 class="primary"
                 @click="workspace.stage({ kind: 'performance', value: clone(performance) })"
               >
-                Добавить в черновик
+                {{ t('Добавить в черновик') }}
               </button>
             </fieldset>
           </div>
           <div class="surface editor-panel">
-            <p class="eyebrow">КОНТРОЛЬ И ВОССТАНОВЛЕНИЕ</p>
-            <h2>Состояние устройства</h2>
+            <h2>{{ t('Устройство') }}</h2>
             <dl class="device-facts">
-              <dt>Модель</dt>
+              <dt>{{ t('Модель') }}</dt>
               <dd>IO White</dd>
-              <dt>Прошивка</dt>
+              <dt>{{ t('Прошивка') }}</dt>
               <dd>{{ snapshot?.identity.firmware ?? '—' }}</dd>
-              <dt>Протокол</dt>
+              <dt>{{ t('Протокол') }}</dt>
               <dd>io_vision_v0</dd>
-              <dt>Текущие RGB</dt>
-              <dd>{{ live.colors.length ? 'Получены от устройства' : 'Не подтверждены' }}</dd>
-              <dt>Пакеты хода</dt>
+              <dt>{{ t('Текущие RGB') }}</dt>
+              <dd>
+                {{ t(String(live.colors.length ? 'Получены от устройства' : 'Не подтверждены')) }}
+              </dd>
+              <dt>{{ t('Пакеты хода') }}</dt>
               <dd>{{ live.packets.toLocaleString('ru-RU') }}</dd>
             </dl>
             <p class="hint">
-              Перед записью сохраняется резервный снимок в каталоге приложения. Восстановление
-              сначала покажет список блоков.
+              {{
+                t(
+                  'Перед записью сохраняется резервный снимок в каталоге приложения. Восстановление сначала покажет список блоков.',
+                )
+              }}
             </p>
             <button
               class="secondary"
               :disabled="!connected || !!busy"
               @click="workspace.recovery()"
             >
-              Подготовить восстановление
+              {{ t('Подготовить восстановление') }}
             </button>
           </div>
         </section>
-        <footer class="workspace-footer">
-          <span>Создано для вашей IO Type 84</span
-          ><span>Настройки устройства · локальные профили · Windows USB</span>
-        </footer>
-      </main>
-      <div v-if="snapshot" class="draft-bar">
-        <div>
-          <span class="draft-dot" :class="{ dirty: edits.length }"></span
-          ><b>{{ edits.length ? 'Есть изменения в черновике' : 'Черновик без изменений' }}</b
-          ><small>{{
-            edits.length
-              ? 'Клавиатура изменится после применения'
-              : 'Выберите клавишу и настройте её под себя'
-          }}</small>
-        </div>
-        <div class="draft-actions">
-          <button
-            class="icon-button"
-            :disabled="!edits.length || !!busy"
-            title="Отменить действие · Ctrl+Z"
-            @click="workspace.undo()"
-          >
-            ↶</button
-          ><button
-            class="icon-button"
-            :disabled="!redo.length || !!busy"
-            title="Вернуть действие · Ctrl+Shift+Z"
-            @click="workspace.redoEdit()"
-          >
-            ↷</button
-          ><button
-            class="text-button"
-            :disabled="!edits.length || !!busy"
-            @click="confirmDiscard = true"
-          >
-            Сбросить черновик</button
-          ><button
-            class="primary"
-            :disabled="!connected || !edits.length || !!busy"
-            @click="workspace.prepare()"
-          >
-            {{ busy || 'Проверить и применить' }}
-          </button>
-        </div>
+        <ul v-if="importNotes.length" class="import-notes">
+          <li v-for="note in importNotes" :key="note">{{ t(note) }}</li>
+        </ul>
       </div>
-    </div>
+    </main>
+    <footer class="draft-bar">
+      <span class="draft-summary" role="status">{{
+        t(
+          String(
+            busy
+              ? t(busy)
+              : edits.length
+                ? edits.length + ' ' + t('изменений в черновике')
+                : t(notice || (draft ? 'Без изменений' : 'Нет открытого профиля')),
+          ),
+        )
+      }}</span>
+      <div class="draft-actions">
+        <button
+          class="icon-button"
+          :disabled="!edits.length || !!busy"
+          :title="t('Отменить · Ctrl+Z')"
+          :aria-label="t('Отменить')"
+          @click="workspace.undo()"
+        >
+          <Icon name="undo" /></button
+        ><button
+          class="icon-button"
+          :disabled="!redo.length || !!busy"
+          :title="t('Повторить · Ctrl+Shift+Z')"
+          :aria-label="t('Повторить')"
+          @click="workspace.redoEdit()"
+        >
+          <Icon name="redo" /></button
+        ><button
+          class="text-button"
+          :disabled="!edits.length || !!busy"
+          @click="confirmDiscard = true"
+        >
+          {{ t('Сбросить') }}</button
+        ><button
+          class="secondary"
+          :disabled="!draft || !!busy"
+          @click="workspace.saveProfile(profileName)"
+        >
+          {{ t('Сохранить профиль') }}</button
+        ><button
+          class="primary"
+          :disabled="!connected || !edits.length || !!busy"
+          @click="workspace.prepare()"
+        >
+          {{ t('Применить') }}
+        </button>
+      </div>
+    </footer>
     <div
       v-if="preview || confirmDiscard || confirmRefresh"
       class="modal-backdrop"
@@ -984,45 +939,54 @@ function modalKeys(event: KeyboardEvent) {
         @keydown="modalKeys"
         :aria-label="preview ? 'Применение изменений' : 'Подтверждение действия'"
       >
-        <template v-if="preview"
-          ><p class="eyebrow">ПЕРЕД ЗАПИСЬЮ</p>
-          <h2>Проверьте изменения</h2>
+        <template v-if="preview">
+          <h2>{{ t('Проверьте изменения') }}</h2>
           <p>
-            Исходное состояние будет проверено ещё раз. Затем приложение сохранит резервный снимок и
-            сверит результат чтением.
+            {{
+              t(
+                'Исходное состояние будет проверено ещё раз. Затем приложение сохранит резервный снимок и сверит результат чтением.',
+              )
+            }}
           </p>
           <ul class="change-list">
             <li v-for="change in preview.changes" :key="change.block">
               <b>{{ blockNames[change.block] ?? change.block }}</b
-              ><span>Будет обновлён</span>
+              ><span>{{ t('Будет обновлён') }}</span>
             </li>
           </ul>
           <ul
             v-if="previewDetails.length"
             class="semantic-changes"
             tabindex="0"
-            aria-label="Подробности изменений"
+            :aria-label="t('Подробности изменений')"
           >
             <li v-for="(line, index) in previewDetails" :key="index">{{ line }}</li>
           </ul>
           <p v-if="recoveryPreview" class="hint">
-            Восстанавливаются исходные данные этих блоков из последней резервной копии.
+            {{ t('Восстанавливаются исходные данные этих блоков из последней резервной копии.') }}
           </p>
-          <p v-if="!preview.changes.length">Отличий от устройства нет.</p>
+          <p v-if="!preview.changes.length">{{ t('Отличий от устройства нет.') }}</p>
           <p v-if="error" class="dialog-error" role="alert">{{ error }}</p>
           <div class="dialog-actions">
-            <button class="secondary" :disabled="!!busy" @click="preview = null">Вернуться</button
+            <button class="secondary" :disabled="!!busy" @click="preview = null">
+              {{ t('Вернуться') }}</button
             ><button
               class="primary"
               :disabled="!!busy || !preview.changes.length"
               @click="workspace.apply()"
             >
-              {{ busy || 'Применить к клавиатуре' }}
+              {{ t(String(busy || 'Применить к клавиатуре')) }}
             </button>
           </div></template
         ><template v-else
-          ><h2>{{ confirmRefresh ? 'Перечитать настройки?' : 'Отменить весь черновик?' }}</h2>
-          <p>Неприменённые изменения будут удалены. Настройки клавиатуры останутся прежними.</p>
+          ><h2>
+            {{ t(String(confirmRefresh ? 'Перечитать настройки?' : 'Отменить весь черновик?')) }}
+          </h2>
+          <p>
+            {{
+              t('Неприменённые изменения будут удалены. Настройки клавиатуры останутся прежними.')
+            }}
+          </p>
           <div class="dialog-actions">
             <button
               class="secondary"
@@ -1031,7 +995,7 @@ function modalKeys(event: KeyboardEvent) {
                 confirmRefresh = false;
               "
             >
-              Оставить</button
+              {{ t('Оставить') }}</button
             ><button
               class="primary"
               @click="
@@ -1040,7 +1004,7 @@ function modalKeys(event: KeyboardEvent) {
                 confirmRefresh = false;
               "
             >
-              {{ confirmRefresh ? 'Перечитать' : 'Отменить черновик' }}
+              {{ t(String(confirmRefresh ? 'Перечитать' : 'Отменить черновик')) }}
             </button>
           </div></template
         >
