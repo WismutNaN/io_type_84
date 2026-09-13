@@ -15,6 +15,10 @@
 | [Журнал работ](WORKLOG.md) | Выполненные операции, проверка и контрольные точки |
 | [Исследование устройства](DEVICE_RESEARCH.md) | Подтверждённые факты, ограничения референсов, неизвестное |
 | [Протокол](PROTOCOL.md) | Формат пакетов, команды, чтение и дальнейшая проверка |
+| [LED-панель](LED_PANEL.md) | Отдельная поверхность, штатные режимы и неизвестные команды |
+| [Прошивка White 1.17](FIRMWARE_RESEARCH.md) | Источник, Intel HEX и границы статического анализа |
+| [Профиль сайта](PROFILE_FORMAT.md) | Внешний JSON, неоднозначные поля и будущий импорт |
+| [Проверка Vial](VIAL_RESEARCH.md) | Custom 68, обнаружение USB и границы совместимости White |
 | [Архитектура](ARCHITECTURE.md) | Контексты DDD, порты, потоки данных и отказы |
 | [План](PLAN.md) | Последовательные фазы и критерии приёмки |
 | [Интерфейс](UI.md) | Основные сценарии и состояния |
@@ -35,6 +39,8 @@
 | Задача | Минимальный контекст |
 |---|---|
 | Подключение и codec | STATUS → PROTOCOL → modules/adapters → fixtures |
+| Панель / прошивка | STATUS → LED_PANEL → FIRMWARE_RESEARCH → modules/lighting |
+| Импорт профиля сайта | STATUS → PROFILE_FORMAT → modules/application |
 | Модель настроек | STATUS → modules/configuration → capabilities в архитектуре |
 | UI | STATUS → UI → нужный feature-модуль и IPC-контракты |
 | Правила | STATUS → modules/automation → runtime в архитектуре |

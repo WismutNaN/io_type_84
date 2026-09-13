@@ -1,0 +1,61 @@
+{
+  "format": "Intel HEX",
+  "file_bytes": 255277,
+  "sha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "checksums_valid": true,
+  "records": 5677,
+  "record_types": {
+    "0": 5672,
+    "1": 1,
+    "4": 3,
+    "5": 1
+  },
+  "entry_address": "0x1c1",
+  "data_bytes": 90728,
+  "address_span_bytes": 516096,
+  "segments": [
+    {
+      "start": "0x0",
+      "end_exclusive": "0x16264",
+      "bytes": 90724
+    },
+    {
+      "start": "0x7dffc",
+      "end_exclusive": "0x7e000",
+      "bytes": 4
+    }
+  ],
+  "initial_words_little_endian": [
+    "0x20007e48",
+    "0x205",
+    "0x21b",
+    "0x3151",
+    "0x21f",
+    "0x221",
+    "0x223",
+    "0x0"
+  ],
+  "selected_ascii_strings": [
+    {
+      "address": "0x10184",
+      "text": "[USBD](error)endpoint idx over range"
+    },
+    {
+      "address": "0x101d8",
+      "text": "[USBD](error)interface idx over range"
+    },
+    {
+      "address": "0x10228",
+      "text": "[USBD](error)string idx over range"
+    },
+    {
+      "address": "0x10b93",
+      "text": " IO Type 84 Magnetic White"
+    }
+  ],
+  "architecture_note": "Первые слова совместимы с таблицей векторов Cortex-M; точный MCU не определён.",
+  "limitations": [
+    "Нет исполнения, записи на устройство или проверки подписи производителя.",
+    "Размер адресного диапазона не равен размеру установленной flash."
+  ]
+}

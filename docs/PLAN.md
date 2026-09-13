@@ -65,6 +65,7 @@
 - [ ] Добавить групповой выбор, remap и Fn с проверкой специальных клавиш → [configuration](../modules/configuration.md), [UI](UI.md).
 - [ ] Проверить media usages и F13…F24 на реальном IO → [configuration](../modules/configuration.md), [device](../modules/device.md).
 - [ ] Добавить JSON-профили, версии схемы, backup, undo/redo черновика → [application](../modules/application.md).
+- [ ] Добавить адаптер импорта JSON сайта в Draft с обработкой неоднозначных и отсутствующих полей → [формат референса](PROFILE_FORMAT.md).
 
 ### Проверка
 - [ ] Readback и физический тест remap/media/Fn; ограничения явно показаны.
@@ -95,6 +96,7 @@
 ### Задачи
 - [ ] Реализовать эффект, индивидуальные цвета и геометрический градиент → [lighting](../modules/lighting.md).
 - [ ] Проверить адреса LED, исходные значения и восстановление → [application](../modules/application.md), [PROTOCOL](PROTOCOL.md).
+- [ ] Исследовать отдельную LED-панель: геометрию, GET и режимы; добавить управление после проверки записи и восстановления → [LED_PANEL](LED_PANEL.md).
 
 ### Проверка
 - [ ] Выбранные физические клавиши соответствуют LED, включая края и Space.

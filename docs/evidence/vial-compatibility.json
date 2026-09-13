@@ -1,0 +1,59 @@
+{
+  "date": "2026-09-13",
+  "operation": "hidapi enumerate only; no handles or reports",
+  "vid": "0C45",
+  "pid": "80D6",
+  "vial_gui_commit": "aef8222a2d0429a183b2ed692d5f9efcfd383f08",
+  "interfaces": [
+    {
+      "interface": 0,
+      "usage_page": "0x1",
+      "usage": "0x6",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 1,
+      "usage_page": "0xc",
+      "usage": "0x1",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 1,
+      "usage_page": "0x1",
+      "usage": "0x80",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 1,
+      "usage_page": "0x1",
+      "usage": "0x6",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 1,
+      "usage_page": "0x1",
+      "usage": "0x2",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 2,
+      "usage_page": "0xff68",
+      "usage": "0x61",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    },
+    {
+      "interface": 3,
+      "usage_page": "0xff67",
+      "usage": "0x61",
+      "product": "IO Type 84 Magnetic White",
+      "vial_serial_magic": false
+    }
+  ],
+  "vial_rawhid_candidates": 0
+}
