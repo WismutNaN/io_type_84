@@ -7,18 +7,19 @@
 <a id="phase-1"></a>
 ## Фаза 1 — компилируемый скелет
 
-**Цель:** запускаемый Tauri/Vue и независимый Rust workspace. **Результат:** окно с состоянием «Устройство не подключено», CLI help. **Трудоёмкость:** S, 1–2 дня. **Статус:** [ ] Не начата.
+**Цель:** запускаемый Tauri/Vue и независимый Rust workspace. **Результат:** окно без сеанса устройства, CLI help. **Трудоёмкость:** S, 1–2 дня. **Статус:** код и сборка готовы; повторная ручная проверка native-окна остаётся открытой.
 
-**Контекст для агента:** в репозитории только документация и игнорируемые референсы. Не копировать приложение AureTrix целиком. Структура и зависимости описаны в архитектуре; бизнес-логика этой фазы отсутствует.
+**Контекст для агента:** workspace и UI созданы; [фактический каркас](DEVELOPMENT.md). Ручное управление окном было остановлено Escape после обнаружения проблемы dev-ресурсов; упаковка исправлена и проверяется тестом, native smoke test повторить отдельно. Бизнес-логики и HID в продукте ещё нет.
 
 ### Задачи
-- [ ] Создать workspace, core/platform/cli и Tauri composition root → [структура](ARCHITECTURE.md#structure), [адаптеры](../modules/adapters.md).
-- [ ] Создать Vue shell, навигацию и отображение статуса → [UI](UI.md), [границы UI](ARCHITECTURE.md#components).
-- [ ] Закрепить версии зависимостей, lockfiles, Windows prerequisites и команды разработки → [ADR-0001](adr/0001-stack.md), [адаптеры](../modules/adapters.md).
+- [x] Создать workspace, core/platform/cli и Tauri composition root → [структура](ARCHITECTURE.md#structure), [адаптеры](../modules/adapters.md).
+- [x] Создать Vue shell, навигацию и отображение статуса → [UI](UI.md), [границы UI](ARCHITECTURE.md#components).
+- [x] Закрепить версии зависимостей, lockfiles, Windows prerequisites и команды разработки → [ADR-0001](adr/0001-stack.md), [адаптеры](../modules/adapters.md).
 
 ### Проверка
-- [ ] Cargo check и сборка frontend проходят; Tauri запускается на Windows.
-- [ ] Core компилируется без зависимостей от Windows/Tauri; CLI не открывает HID.
+- [x] Cargo check, frontend и release EXE собираются на Windows.
+- [ ] Повторно проверить автономное native-окно, навигацию и ответ Vue → Rust без dev-сервера.
+- [x] Core компилируется без зависимостей от Windows/Tauri; CLI не открывает HID.
 
 <a id="phase-2"></a>
 ## Фаза 2 — native чтение на Rust

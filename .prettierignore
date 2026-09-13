@@ -1,0 +1,8 @@
+archive_data/
+target/
+dist/
+node_modules/
+src-tauri/gen/
+src/shared/contracts/generated.ts
+docs/evidence/
+package-lock.json

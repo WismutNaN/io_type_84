@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Основное окно каркаса без доступа к файлам, shell и HID.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

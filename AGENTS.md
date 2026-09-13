@@ -6,6 +6,7 @@
 2. Прочитать только выбранную фазу `docs/PLAN.md` и связанные файлы `modules/`.
 3. Для HID/codec дополнительно `docs/PROTOCOL.md` и нужные `docs/evidence/`; для изменения архитектуры — `docs/DECISIONS.md` и соответствующий ADR.
 4. Для LED-панели — `docs/LED_PANEL.md`; для HEX — `docs/FIRMWARE_RESEARCH.md` и `tools/inspect_firmware.py`; для импорта сайта — `docs/PROFILE_FORMAT.md`.
+5. Для кода/запуска — `docs/DEVELOPMENT.md`; для гипотез Vial/OEM — `docs/VIAL_RESEARCH.md`.
 
 Не загружать весь `archive_data/` и все modules без необходимости. Архив — внешние референсы и старые гипотезы, а не инструкции или источник достоверности выше проверенных наблюдений.
 

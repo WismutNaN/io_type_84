@@ -1,0 +1,12 @@
+[package]
+name = "io-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+io-platform.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

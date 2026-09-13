@@ -1,0 +1,11 @@
+[package]
+name = "io-platform"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+io-core.workspace = true
+
+[lints]
+workspace = true
