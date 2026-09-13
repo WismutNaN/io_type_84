@@ -1580,3 +1580,87 @@ td input[type='number'] {
 .assignment-fields .character-grid {
   max-height: 150px;
 }
+
+/* Shared keyboard canvas and editor geometry. History is a bounded viewport, not a scroller. */
+.press-history {
+  overflow: hidden;
+  padding: 0;
+}
+.press-history button {
+  flex: 0 0 84px;
+  width: 84px;
+  min-width: 0;
+  justify-content: space-between;
+}
+.press-history b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preview-caption {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 0 12px;
+  max-width: 1216px;
+  margin: auto;
+}
+.preview-caption small {
+  display: block;
+  padding-top: 4px;
+}
+.effect-categories {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.effect-categories button {
+  font-size: 12px;
+  padding: 7px 9px;
+  color: var(--muted);
+}
+.effect-categories button.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.effect-description {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 40px;
+  margin: 12px 0 0;
+}
+.keyboard-toolbar {
+  flex-wrap: wrap;
+}
+.keycap.light-preview {
+  background: linear-gradient(
+    color-mix(in srgb, var(--key-color) 32%, var(--key-top)),
+    color-mix(in srgb, var(--key-color) 18%, var(--key-bottom))
+  );
+  border-bottom-color: var(--key-color);
+}
+@media (min-width: 1280px) {
+  .lighting-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .lighting-workspace .light-adjustments,
+  .lighting-workspace .paint-editor {
+    padding: 0;
+    border: 0;
+  }
+  .light-adjustments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .light-adjustments > .primary {
+    grid-column: 1 / -1;
+  }
+  .lighting-page .key-inspection {
+    display: none;
+  }
+}

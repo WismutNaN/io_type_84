@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import type { MonitorFrame } from '../../shared/contracts/generated';
 import { sampleDepth } from './telemetry';
 import { keyboardKeys } from '../../shared/keyboard-view/layout';
 import { t, mm } from '../../shared/ui/preferences';
 const props = defineProps<{ live: MonitorFrame; selected: number[] }>();
-defineEmits<{ select: [slot: number]; clear: [] }>();
+const emit = defineEmits<{ select: [slot: number]; clear: []; capacity: [count: number] }>();
+const historyElement = ref<HTMLElement | null>(null);
+const visibleCount = ref(1);
+const visibleHistory = computed(() => props.live.history.slice(0, visibleCount.value));
+let observer: ResizeObserver | undefined;
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) => {
+    visibleCount.value = Math.max(0, Math.floor(((entry?.contentRect.width ?? 0) + 5) / 89));
+    emit('capacity', visibleCount.value * 3);
+  });
+  if (historyElement.value) observer.observe(historyElement.value);
+});
+onBeforeUnmount(() => observer?.disconnect());
 const label = (slot: number) => keyboardKeys.find((k) => k.slot === slot)?.label ?? String(slot);
 const depth = computed(() => sampleDepth(props.live, props.selected[0] ?? -1));
 </script>
@@ -24,9 +36,9 @@ const depth = computed(() => sampleDepth(props.live, props.selected[0] ?? -1));
         >{{ depth === null ? '—' : mm(depth) }} <small>{{ t('мм') }}</small></output
       >
     </div>
-    <div class="press-history" :aria-label="t('Последние 20 нажатий')">
+    <div ref="historyElement" class="press-history" :aria-label="t('Последние нажатия')">
       <button
-        v-for="event in live.history"
+        v-for="event in visibleHistory"
         :key="event.sequence"
         :title="`${label(event.slot)} · ${mm(event.peakUm)} ${t('мм')}`"
         @click="$emit('select', event.slot)"

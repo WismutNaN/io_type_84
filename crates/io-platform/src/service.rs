@@ -242,6 +242,12 @@ impl KeyboardService {
     pub fn clear_history(&self) {
         self.monitor.lock().expect("monitor").clear_history();
     }
+    pub fn set_history_capacity(&self, count: usize) {
+        self.monitor
+            .lock()
+            .expect("monitor")
+            .set_history_capacity(count);
+    }
     pub fn prepare(&self, request: ChangeRequest) -> Result<ChangePreview> {
         self.request(move |w| {
             let before = w

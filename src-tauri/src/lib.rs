@@ -47,6 +47,10 @@ fn clear_history(service: tauri::State<'_, KeyboardService>) {
     service.clear_history();
 }
 #[tauri::command]
+fn set_history_capacity(count: usize, service: tauri::State<'_, KeyboardService>) {
+    service.set_history_capacity(count);
+}
+#[tauri::command]
 async fn prepare_changes(
     request: ChangeRequest,
     service: tauri::State<'_, KeyboardService>,
@@ -98,6 +102,7 @@ pub fn run() {
             set_monitor,
             monitor_frame,
             clear_history,
+            set_history_capacity,
             configure_rules,
             prepare_changes,
             apply_changes,

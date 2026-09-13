@@ -10,6 +10,12 @@ import KeyInspection from './features/editor/KeyInspection.vue';
 import MonitorStrip from './features/editor/MonitorStrip.vue';
 import DepthActions from './features/editor/DepthActions.vue';
 import { useComputerRules } from './features/editor/computer-rules';
+import {
+  effectGroups,
+  effectDescriptions,
+  reactiveModes,
+} from './features/editor/lighting-preview';
+import { useLightingPreview } from './features/editor/use-lighting-preview';
 import DksEditor from './features/editor/DksEditor.vue';
 import { keyboardKeys } from './shared/keyboard-view/layout';
 import { useWorkspace } from './features/editor/workspace';
@@ -98,6 +104,13 @@ const light = ref<LightingSettings>({
   speed: 3,
   direction: 0,
 });
+const colorSource = ref<'preview' | 'assigned' | 'live'>('preview');
+const previewEnabled = computed(() => page.value === 'lighting' && colorSource.value === 'preview');
+const lightingPreview = useLightingPreview(light, draft, previewEnabled);
+const lightCategory = ref('Постоянный свет');
+const visibleEffects = computed(
+  () => effectGroups.find((g) => g.name === lightCategory.value)!.modes,
+);
 const performance = ref<PerformanceSettings>({
   reportRate: 6,
   topDeadZoneUm: 0,
@@ -170,6 +183,7 @@ watch([page, tool, () => selected.value[0]], async () => {
   document.querySelector('.editor-scroll')?.scrollTo({ top: 0 });
 });
 function select(slot: number, toggle: boolean, paint = false) {
+  if (previewEnabled.value && light.value.mode !== 3) lightingPreview.pulse(slot);
   if (paint) {
     if (!selected.value.includes(slot)) selected.value.push(slot);
     return;
@@ -216,6 +230,7 @@ function gradient() {
   changes.push({ kind: 'lighting', value: { ...clone(light.value), mode: 20 } });
   workspace.stage(...changes);
   actualColors.value = false;
+  colorSource.value = 'assigned';
 }
 function loadProfile(profile: LocalProfile) {
   try {
@@ -411,7 +426,7 @@ function modalKeys(event: KeyboardEvent) {
       class="main-content"
       :class="{
         'has-keyboard': page === 'keyboard' || page === 'lighting',
-        'keyboard-workspace': page === 'keyboard',
+        'keyboard-workspace': page === 'keyboard' || page === 'lighting',
         'lighting-page': page === 'lighting',
       }"
     >
@@ -433,13 +448,11 @@ function modalKeys(event: KeyboardEvent) {
                 Fn
               </button>
             </div>
-            <div class="segmented" v-else>
-              <button :class="{ active: !actualColors }" @click="actualColors = false">
-                {{ t('Заданные цвета') }}</button
-              ><button :class="{ active: actualColors }" @click="actualColors = true">
-                {{ t('Текущие цвета') }}
-              </button>
-            </div>
+            <select v-else v-model="colorSource" :aria-label="t('Отображение света')">
+              <option value="preview">{{ t('Предпросмотр эффекта') }}</option>
+              <option value="assigned">{{ t('Заданные цвета') }}</option>
+              <option value="live">{{ t('Текущие цвета') }}</option>
+            </select>
             <form class="key-search" @submit.prevent="findKey">
               <Icon name="search" /><input
                 v-model="search"
@@ -457,7 +470,15 @@ function modalKeys(event: KeyboardEvent) {
               >
                 {{ t('Группа') }}</button
               ><button class="text-button" @click="group('wasd')">WASD</button
-              ><button class="text-button" @click="group('all')">{{ t('Все') }}</button>
+              ><button class="text-button" @click="group('all')">{{ t('Все') }}</button
+              ><button
+                class="text-button clear-selection"
+                :disabled="!selected.length"
+                :title="t('Снять выделение') + ' · Esc'"
+                @click="selected = []"
+              >
+                {{ t('Снять выделение') }}
+              </button>
             </div>
             <button
               class="monitor-toggle"
@@ -476,12 +497,14 @@ function modalKeys(event: KeyboardEvent) {
             :view="view"
             :function-layer="functionLayer"
             :multi="multi"
-            :actual-colors="actualColors"
+            :actual-colors="page === 'lighting' && colorSource === 'live'"
+            :preview-colors="lightingPreview.colors.value"
+            @pointerup="light.mode === 3 && selected.forEach(lightingPreview.pulse)"
             :rules="rules"
             @select="select"
           />
           <p
-            v-if="page === 'lighting' && actualColors && !live.colors.length"
+            v-if="page === 'lighting' && colorSource === 'live' && !live.colors.length"
             class="inline-notice"
           >
             {{
@@ -490,12 +513,27 @@ function modalKeys(event: KeyboardEvent) {
               )
             }}
           </p>
+          <div v-if="previewEnabled" class="preview-caption">
+            <span
+              >{{ t('Визуальная модель. Рисунок на устройстве может отличаться.')
+              }}<small v-if="reactiveModes.includes(light.mode)">{{
+                t('Нажмите клавишу на макете для проверки отклика.')
+              }}</small></span
+            >
+            <button
+              class="text-button"
+              @click="lightingPreview.playing.value = !lightingPreview.playing.value"
+            >
+              {{ t(lightingPreview.playing.value ? 'Пауза' : 'Воспроизвести') }}
+            </button>
+          </div>
           <MonitorStrip
             v-if="live.active || live.history.length"
             :live="displayLive"
             :selected="selected"
             @select="select($event, false)"
             @clear="workspace.clearHistory()"
+            @capacity="workspace.setHistoryCapacity"
           />
           <KeyInspection
             :snapshot="draft"
@@ -620,17 +658,30 @@ function modalKeys(event: KeyboardEvent) {
           <template v-else>
             <div class="lighting-workspace">
               <section class="light-effects">
-                <h2>{{ t('Эффект') }}</h2>
-                <div class="effect-grid">
+                <div class="effect-categories">
                   <button
-                    v-for="(name, index) in effects"
-                    :key="index"
-                    :class="{ chosen: light.mode === index }"
-                    @click="light.mode = index"
+                    v-for="category in effectGroups"
+                    :key="category.name"
+                    :class="{ active: lightCategory === category.name }"
+                    @click="lightCategory = category.name"
                   >
-                    <span class="effect-swatch" :data-effect="index"></span>{{ t(name) }}
+                    {{ t(category.name) }}
                   </button>
                 </div>
+                <div class="effect-grid">
+                  <button
+                    v-for="index in visibleEffects"
+                    :key="index"
+                    :class="{ chosen: light.mode === index }"
+                    @click="
+                      light.mode = index;
+                      colorSource = 'preview';
+                    "
+                  >
+                    {{ t(effects[index]!) }}
+                  </button>
+                </div>
+                <p class="effect-description">{{ t(effectDescriptions[light.mode] ?? '') }}</p>
               </section>
               <section class="light-adjustments">
                 <label

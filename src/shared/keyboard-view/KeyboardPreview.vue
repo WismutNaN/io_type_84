@@ -16,6 +16,7 @@ const props = defineProps<{
   functionLayer: boolean;
   multi: boolean;
   actualColors: boolean;
+  previewColors?: Record<number, string>;
 }>();
 const emit = defineEmits<{ select: [slot: number, toggle: boolean, paint?: boolean] }>();
 const travel = computed(() => new Map(props.live.travel.map((k) => [k.slot, k])));
@@ -25,6 +26,7 @@ function depth(slot: number) {
   return props.live.active && k && k.ageMs < 600 ? k.travelUm : null;
 }
 function color(slot: number) {
+  if (props.previewColors) return props.previewColors[slot] ?? null;
   const k = props.snapshot?.keys[slot];
   if (!k) return null;
   if (props.actualColors) {
@@ -120,6 +122,7 @@ function navigate(event: KeyboardEvent, slot: number) {
               pressed: (depth(key.slot) ?? 0) >= 300,
               custom: customBinding(key.slot),
               'has-depth-action': deepLabel(key.slot),
+              'light-preview': !!previewColors,
             }"
             :style="{
               left: `${(key.x / keyboardBounds.width) * 100}%`,

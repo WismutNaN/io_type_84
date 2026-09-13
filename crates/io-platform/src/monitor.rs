@@ -16,6 +16,7 @@ pub struct MonitorState {
     pub packets: u32,
     travel: BTreeMap<u8, (KeyTravel, Instant)>,
     history: Vec<KeyPress>,
+    history_capacity: usize,
     down: [bool; 128],
     sequence: u32,
     colors: Vec<LiveColor>,
@@ -33,6 +34,7 @@ impl Default for MonitorState {
             packets: 0,
             travel: BTreeMap::new(),
             history: Vec::new(),
+            history_capacity: 20,
             down: [false; 128],
             sequence: 0,
             colors: Vec::new(),
@@ -98,7 +100,7 @@ impl MonitorState {
                     peak_um: depth,
                 },
             );
-            self.history.truncate(20);
+            self.history.truncate(self.history_capacity);
         } else if self.down[usize::from(slot)] {
             if let Some(event) = self.history.iter_mut().find(|e| e.slot == slot) {
                 event.peak_um = event.peak_um.max(depth);
@@ -114,6 +116,10 @@ impl MonitorState {
     }
     pub fn clear_history(&mut self) {
         self.history.clear();
+    }
+    pub fn set_history_capacity(&mut self, count: usize) {
+        self.history_capacity = count.min(120);
+        self.history.truncate(self.history_capacity);
     }
     pub fn frame(&self) -> MonitorFrame {
         MonitorFrame {
@@ -189,6 +195,21 @@ mod tests {
         for depth in [0, 100, 180, 160, 0] {
             state.ingest(&packet(58, depth));
         }
+        assert!(state.history.is_empty());
+    }
+    #[test]
+    fn resized_history_trims_existing_and_future_events() {
+        let mut state = MonitorState::default();
+        for _ in 0..20 {
+            state.ingest(&packet(49, 900));
+            state.ingest(&packet(49, 0));
+        }
+        state.set_history_capacity(6);
+        assert_eq!(state.history.len(), 6);
+        state.ingest(&packet(49, 900));
+        assert_eq!(state.history.len(), 6);
+        assert_eq!(state.history[0].sequence, 21);
+        state.set_history_capacity(0);
         assert!(state.history.is_empty());
     }
 }

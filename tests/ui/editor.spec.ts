@@ -118,11 +118,46 @@ test('release and a stalled IPC frame clear movement without clearing selection'
   });
   await expect(key).toHaveClass(/pressed/);
   await page.evaluate(() => {
+    (window as any).stall = false;
+    (window as any).testFrame.history = Array.from({ length: 80 }, (_, i) => ({ sequence: 80-i, slot: 105, peakUm: 3100 }));
+  });
+  await expect(page.locator('.press-history button').first()).toBeVisible();
+  const history = await page.locator('.press-history').evaluate(e => ({ count: e.children.length, width: e.clientWidth, overflow: getComputedStyle(e).overflowX, scroll: e.scrollWidth }));
+  expect(history.count).toBeLessThanOrEqual(Math.floor((history.width+5)/89));
+  expect(history.overflow).toBe('hidden');
+  expect(history.scroll).toBeLessThanOrEqual(history.width);
+  await page.evaluate(() => {
     (window as any).stall = true;
   });
   await expect(key).not.toHaveClass(/pressed/, { timeout: 2000 });
   await expect(key).toHaveClass(/selected/);
   await expect(page.locator('.inspection-travel output')).toContainText('—');
+
+});
+
+test('lighting previews motion, clearing groups and layout match keyboard', async ({ page }) => {
+  await page.setViewportSize({ width: 1480, height: 908 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Открыть пример', exact: true }).click();
+  await page.getByRole('button', { name: 'Все', exact: true }).click();
+  await expect(page.locator('.keycap.selected')).toHaveCount(84);
+  await page.getByRole('button', { name: 'Снять выделение', exact: true }).click();
+  await expect(page.locator('.keycap.selected')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Свет', exact: true }).click();
+  await page.getByRole('button', { name: 'Движение', exact: true }).click();
+  await page.getByRole('button', { name: 'Волна', exact: true }).click();
+  const key = page.locator('[data-slot="105"]');
+  const initial = await key.evaluate(e => (e as HTMLElement).style.getPropertyValue('--key-color'));
+  await expect.poll(() => key.evaluate(e => (e as HTMLElement).style.getPropertyValue('--key-color'))).not.toBe(initial);
+  await expect(page.locator('.preview-caption')).toContainText('Визуальная модель');
+  for (const width of [1480, 960]) {
+    await page.setViewportSize({ width, height: 800 });
+    const board = (await page.locator('.keyboard-area').boundingBox())!;
+    const editor = (await page.locator('.editor-scroll').boundingBox())!;
+    if (width >= 1280) expect(editor.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+    else expect(editor.y).toBeGreaterThanOrEqual(board.y + board.height - 1);
+    await page.screenshot({ path: `archive_data/ui-light-preview-${width}.png` });
+  }
 });
 
 test('every editor reflows at minimum size, numeric depth entry is optional', async ({ page }) => {

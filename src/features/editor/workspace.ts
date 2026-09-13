@@ -176,6 +176,16 @@ export function useWorkspace() {
     await invoke('clear_history');
     live.value.history = [];
   }
+  async function setHistoryCapacity(count: number) {
+    live.value.history = live.value.history.slice(0, count);
+    if (native) {
+      try {
+        await invoke('set_history_capacity', { count });
+      } catch (e) {
+        error.value = message(e);
+      }
+    }
+  }
   async function prepare() {
     if (!snapshot.value) return;
     await run('Проверка изменений…', async () => {
@@ -273,6 +283,7 @@ export function useWorkspace() {
     monitor,
     poll,
     clearHistory,
+    setHistoryCapacity,
     prepare,
     apply,
     recovery,
