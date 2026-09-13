@@ -53,3 +53,7 @@
 В ADR фиксируется причина решения, в WORKLOG — факт выполнения. STATUS содержит только актуальное состояние, а не историю обсуждения.
 
 Редизайн и программная глубина: [UI](UI.md) → [модуль editor-interaction](../modules/editor-interaction.md) → [ADR-0005](adr/0005-editor-interaction.md). Это краткий маршрут для агента, работающего только с интерфейсом или обработкой нажатий.
+
+Каталог/жесты: [реализованные контракты](../modules/action-catalog.md) → [ADR-0006](adr/0006-actions-gestures-scenes.md). Уведомления, скрипты, LLM и сцены описаны как расширения, не готовые интеграции.
+
+Подсветка в бинарнике: [White 1.17 — RGB и полоса](firmware-lighting-v1.17.md) → [воспроизводимый отчёт](evidence/firmware-lighting-analysis.json).
