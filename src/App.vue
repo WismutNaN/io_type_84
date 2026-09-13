@@ -9,7 +9,8 @@ import TravelSlider from './shared/ui/TravelSlider.vue';
 import KeyInspection from './features/editor/KeyInspection.vue';
 import MonitorStrip from './features/editor/MonitorStrip.vue';
 import DepthActions from './features/editor/DepthActions.vue';
-import { useComputerRules } from './features/editor/computer-rules';
+import ActionCatalog from './features/editor/ActionCatalog.vue';
+import { defaultAutomation } from './features/editor/computer-rules';
 import {
   effectGroups,
   effectDescriptions,
@@ -55,17 +56,8 @@ const {
   profiles,
   recoveryPreview,
 } = workspace;
-const computer = useComputerRules();
-const { rules, ruleMessage } = computer;
-const ruleBusy = ref(false);
-async function saveRules(next: typeof rules.value) {
-  ruleBusy.value = true;
-  try {
-    await computer.save(next, native);
-  } finally {
-    ruleBusy.value = false;
-  }
-}
+const { automation, automationDirty, hardwareEdits, startActions } = workspace;
+const catalogTab = ref('computer');
 const page = ref('keyboard');
 const section = ref('keys'),
   view = ref<'layout' | 'travel' | 'colors'>('layout'),
@@ -235,10 +227,14 @@ function gradient() {
 function loadProfile(profile: LocalProfile) {
   try {
     if (snapshot.value) {
-      workspace.stage(...profileEdits(draft.value!, profile.snapshot));
+      workspace.stage(...profileEdits(draft.value!, profile.snapshot), {
+        kind: 'automation',
+        value: profile.automation ?? defaultAutomation(),
+      });
       notice.value = 'Профиль добавлен в черновик. Устройство ещё не изменено.';
     } else {
       snapshot.value = clone(profile.snapshot);
+      workspace.stage({ kind: 'automation', value: profile.automation ?? defaultAutomation() });
       notice.value = 'Локальный профиль открыт без подключения';
     }
     profileName.value = profile.name;
@@ -396,7 +392,7 @@ function modalKeys(event: KeyboardEvent) {
           v-for="item in [
             { id: 'keyboard', label: 'Клавиатура', icon: 'keyboard' },
             { id: 'lighting', label: 'Свет', icon: 'light' },
-            { id: 'macros', label: 'Макросы', icon: 'macro' },
+            { id: 'macros', label: 'Каталог', icon: 'macro' },
             { id: 'profiles', label: 'Профили', icon: 'profile' },
             { id: 'settings', label: 'Параметры', icon: 'settings' },
           ]"
@@ -408,6 +404,13 @@ function modalKeys(event: KeyboardEvent) {
           <Icon :name="item.icon" /><span>{{ t(item.label) }}</span>
         </button>
       </nav>
+      <button
+        v-if="live.rulesEnabled"
+        class="runtime-stop"
+        @click="workspace.setActionsEnabled(false)"
+      >
+        {{ t('Остановить жесты') }}
+      </button>
       <button
         class="connection-button"
         :class="{ connected }"
@@ -500,7 +503,7 @@ function modalKeys(event: KeyboardEvent) {
             :actual-colors="page === 'lighting' && colorSource === 'live'"
             :preview-colors="lightingPreview.colors.value"
             @pointerup="light.mode === 3 && selected.forEach(lightingPreview.pulse)"
-            :rules="rules"
+            :automation="automation"
             @select="select"
           />
           <p
@@ -586,13 +589,17 @@ function modalKeys(event: KeyboardEvent) {
                 :live="displayLive"
                 @stage="workspace.stage"
               />
-              <div v-if="tool === 'assignment' && selected.length === 1" class="companion-editor">
+              <div v-if="tool === 'assignment' && selected.length > 0" class="companion-editor">
                 <DepthActions
                   :selected="selected"
-                  :rules="rules"
+                  :profile="automation"
                   :live="displayLive"
-                  :disabled="ruleBusy || !!busy || functionLayer"
-                  @save="saveRules"
+                  :disabled="!!busy || functionLayer"
+                  @save="workspace.stage({ kind: 'automation', value: $event })"
+                  @catalog="
+                    page = 'macros';
+                    catalogTab = 'computer';
+                  "
                 />
                 <div class="software-status">
                   <label class="switch-line"
@@ -605,8 +612,15 @@ function modalKeys(event: KeyboardEvent) {
                       type="checkbox"
                       role="switch"
                       :checked="live.rulesEnabled"
-                      :disabled="!native || !live.active || !rules.length || ruleBusy || !!busy"
-                      @change="computer.enable(($event.target as HTMLInputElement).checked)"
+                      :disabled="
+                        !native ||
+                        !connected ||
+                        !workspace.appliedAutomation.value.gestures.length ||
+                        !!busy
+                      "
+                      @change="
+                        workspace.setActionsEnabled(($event.target as HTMLInputElement).checked)
+                      "
                   /></label>
                   <p v-if="functionLayer" class="hint">
                     {{
@@ -615,8 +629,8 @@ function modalKeys(event: KeyboardEvent) {
                       )
                     }}
                   </p>
-                  <p v-if="ruleMessage || live.ruleError" class="hint" role="status">
-                    {{ t(live.ruleError || ruleMessage) }}
+                  <p v-if="live.ruleError" class="hint" role="status">
+                    {{ t(live.ruleError) }}
                   </p>
                   <small v-if="live.rulesEnabled"
                     >{{ t('Выполнено') }}: {{ live.ruleFirings }}</small
@@ -763,9 +777,25 @@ function modalKeys(event: KeyboardEvent) {
         </div>
       </template>
       <div v-else class="page-scroll">
-        <template v-if="page === 'macros'"
-          ><MacroEditor
-            v-if="draft"
+        <template v-if="page === 'macros'">
+          <nav class="editor-tabs">
+            <button :class="{ active: catalogTab === 'computer' }" @click="catalogTab = 'computer'">
+              {{ t('Действия компьютера') }}</button
+            ><button
+              :class="{ active: catalogTab === 'keyboard' }"
+              @click="catalogTab = 'keyboard'"
+            >
+              {{ t('Макросы клавиатуры') }}
+            </button>
+          </nav>
+          <ActionCatalog
+            v-if="draft && catalogTab === 'computer'"
+            :profile="automation"
+            :disabled="!!busy"
+            @save="workspace.stage({ kind: 'automation', value: $event })"
+          />
+          <MacroEditor
+            v-else-if="draft"
             :snapshot="draft"
             :disabled="!!busy"
             @stage="workspace.stage"
@@ -781,8 +811,8 @@ function modalKeys(event: KeyboardEvent) {
             >
               {{ t('Открыть пример') }}
             </button>
-          </div></template
-        >
+          </div>
+        </template>
         <section v-if="page === 'settings'" class="preferences-panel">
           <h2>{{ t('Приложение') }}</h2>
           <label
@@ -970,7 +1000,7 @@ function modalKeys(event: KeyboardEvent) {
           {{ t('Сохранить профиль') }}</button
         ><button
           class="primary"
-          :disabled="!connected || !edits.length || !!busy"
+          :disabled="(!connected && hardwareEdits.length > 0) || !edits.length || !!busy"
           @click="workspace.prepare()"
         >
           {{ t('Применить') }}
@@ -999,6 +1029,34 @@ function modalKeys(event: KeyboardEvent) {
               )
             }}
           </p>
+          <div
+            v-if="!recoveryPreview && (automationDirty || automation.gestures.length)"
+            class="automation-preview"
+          >
+            <b>{{ t('На компьютере') }}</b>
+            <p>
+              {{ automation.actions.length }} {{ t('действий') }} ·
+              {{ automation.gestures.length }} {{ t('жестов') }}
+            </p>
+            <ul>
+              <li v-for="r in automation.gestures" :key="r.id">
+                {{ r.slots.map(keyLabel).join(' + ') }} · {{ r.thresholdUm / 1000 }} {{ t('мм')
+                }}{{ r.holdMs ? ' · ' + r.holdMs / 1000 + ' ' + t('с') : '' }} →
+                {{ t(automation.actions.find((a) => a.id === r.actionId)?.name ?? '') }}
+              </li>
+            </ul>
+            <label v-if="native && connected && automation.gestures.length" class="switch-line"
+              ><span>{{ t('Включить жесты после применения') }}</span
+              ><input v-model="startActions" type="checkbox"
+            /></label>
+            <p class="hint">
+              {{
+                t(
+                  'Действия компьютера сохраняются в профиле приложения. Они не записываются в прошивку.',
+                )
+              }}
+            </p>
+          </div>
           <ul class="change-list">
             <li v-for="change in preview.changes" :key="change.block">
               <b>{{ blockNames[change.block] ?? change.block }}</b
@@ -1016,17 +1074,26 @@ function modalKeys(event: KeyboardEvent) {
           <p v-if="recoveryPreview" class="hint">
             {{ t('Восстанавливаются исходные данные этих блоков из последней резервной копии.') }}
           </p>
-          <p v-if="!preview.changes.length">{{ t('Отличий от устройства нет.') }}</p>
+          <p v-if="!preview.changes.length && !automationDirty">
+            {{ t('Отличий от устройства нет.') }}
+          </p>
           <p v-if="error" class="dialog-error" role="alert">{{ error }}</p>
           <div class="dialog-actions">
             <button class="secondary" :disabled="!!busy" @click="preview = null">
               {{ t('Вернуться') }}</button
             ><button
               class="primary"
-              :disabled="!!busy || !preview.changes.length"
+              :disabled="!!busy || (!preview.changes.length && !automationDirty)"
               @click="workspace.apply()"
             >
-              {{ t(String(busy || 'Применить к клавиатуре')) }}
+              {{
+                t(
+                  String(
+                    busy ||
+                      (preview.changes.length ? 'Применить изменения' : 'Сохранить на компьютере'),
+                  ),
+                )
+              }}
             </button>
           </div></template
         ><template v-else

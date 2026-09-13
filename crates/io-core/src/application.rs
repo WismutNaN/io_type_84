@@ -28,6 +28,18 @@ pub fn typescript_contracts() -> String {
         AppInfo::decl(&config),
     );
     declarations.push_str(&crate::keyboard::typescript_contracts(&config));
+    use crate::automation::*;
+    for d in [
+        ActionCommand::decl(&config),
+        ApplicationId::decl(&config),
+        ActionStep::decl(&config),
+        ActionDefinition::decl(&config),
+        GestureRule::decl(&config),
+        AutomationProfile::decl(&config),
+        PlatformCommands::decl(&config),
+    ] {
+        declarations.push_str(&format!("\nexport {d}\n"));
+    }
     format!("{}\n", declarations.trim_end())
 }
 

@@ -1,3 +1,5 @@
+import { readAutomation, defaultAutomation } from './computer-rules.ts';
+import type { AutomationProfile } from '../../shared/contracts/generated';
 import type { BindingRecord, Edit, KeyboardSnapshot, Rgb } from '../../shared/contracts/generated';
 import { physicalKeyCodes } from '../../shared/keyboard-view/keycodes.ts';
 
@@ -233,7 +235,8 @@ export const effects = [
 ];
 
 export interface LocalProfile {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
+  automation?: AutomationProfile;
   name: string;
   savedAt: string;
   snapshot: KeyboardSnapshot;
@@ -245,10 +248,10 @@ export function readLocalProfile(text: string): LocalProfile {
     !value ||
     typeof value !== 'object' ||
     !('schemaVersion' in value) ||
-    value.schemaVersion !== 1 ||
+    ![1, 2].includes(Number(value.schemaVersion)) ||
     !('snapshot' in value)
   )
-    throw new Error('Нужен профиль IO Workspace версии 1');
+    throw new Error('Нужен профиль IO Workspace версии 1 или 2');
   const p = value as LocalProfile;
   if (
     typeof p.name !== 'string' ||
@@ -354,6 +357,7 @@ export function readLocalProfile(text: string): LocalProfile {
         throw new Error('Повреждено действие макроса');
   }
   if (stepCount > 15000) throw new Error('Превышен размер каталога макросов');
+  p.automation = p.schemaVersion === 2 ? readAutomation(p.automation) : defaultAutomation();
   return p;
 }
 

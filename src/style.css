@@ -1664,3 +1664,150 @@ td input[type='number'] {
     display: none;
   }
 }
+
+.gesture-list {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.gesture-list > div {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.gesture-list > div.chosen {
+  border-color: var(--accent);
+}
+.gesture-list > div > button:first-child {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+  gap: 8px;
+  min-width: 0;
+}
+.gesture-list span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.gesture-list b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.depth-actions fieldset {
+  display: grid;
+  gap: 14px;
+}
+.action-catalog {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 640px);
+  gap: 32px;
+  max-width: 980px;
+  margin: 20px auto;
+}
+.catalog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: start;
+}
+.catalog-list > button:not(.secondary) {
+  text-align: left;
+  padding: 12px;
+}
+.catalog-list small {
+  display: block;
+  color: var(--muted);
+  padding-top: 5px;
+}
+.catalog-detail {
+  min-width: 0;
+}
+.catalog-detail fieldset,
+.command-editor {
+  display: grid;
+  gap: 18px;
+}
+.command-editor textarea {
+  min-width: 0;
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  font: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+}
+.modifier-pills {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.modifier-pills label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sequence-steps {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.sequence-steps > li {
+  border: 1px solid var(--border);
+  padding: 12px 16px 16px;
+  border-radius: 8px;
+}
+.step-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.platform-variants > select {
+  margin: 16px 0;
+}
+.platform-variants .switch-line {
+  margin-bottom: 18px;
+}
+.automation-preview {
+  padding: 14px 0;
+  border-block: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.automation-preview ul {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+@media (max-width: 780px) {
+  .action-catalog {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .catalog-list {
+    max-height: 240px;
+    overflow: auto;
+  }
+}
+
+.page-scroll > .editor-tabs {
+  top: -28px;
+  margin-top: -28px;
+  padding-top: 20px;
+}
+.modifier-pills label {
+  flex-direction: row;
+}
+.runtime-stop {
+  color: var(--live);
+  border-color: var(--border);
+  white-space: nowrap;
+  font-size: 12px;
+}

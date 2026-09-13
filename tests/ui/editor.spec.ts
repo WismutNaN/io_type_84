@@ -48,7 +48,7 @@ test('all 84 keys, selection, depth actions, languages and themes fit supported 
     const body = await page.locator('.editor-scroll').innerText();
     expect(body).not.toMatch(/[А-Яа-яЁё]/);
   }
-  for (const label of ['Lighting', 'Macros', 'Profiles', 'Settings']) {
+  for (const label of ['Lighting', 'Catalog', 'Profiles', 'Settings']) {
     await page.getByRole('button', { name: label, exact: true }).click();
     await page.screenshot({ path: `archive_data/ui-${label.toLowerCase()}-en.png` });
   }
@@ -176,7 +176,7 @@ test('every editor reflows at minimum size, numeric depth entry is optional', as
   await page.getByRole('button', { name: 'Поведение', exact: true }).click();
   await page.getByRole('button', { name: 'Глубокое нажатие', exact: false }).last().click();
   await expect(page.locator('.dks-editor input[type="number"]')).toHaveCount(0);
-  for (const nav of ['Свет', 'Макросы', 'Профили', 'Параметры']) {
+  for (const nav of ['Свет', 'Каталог', 'Профили', 'Параметры']) {
     await page.getByRole('button', { name: nav, exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(960);
     const clipped = await page.locator('button:visible,select:visible').evaluateAll((elements) =>
@@ -189,4 +189,57 @@ test('every editor reflows at minimum size, numeric depth entry is optional', as
     );
     expect(clipped).toEqual([]);
   }
+});
+
+test('gestures share the draft, undo, profile and native apply flow', async ({page}) => {
+  await page.addInitScript(({snapshot})=>{
+    const w=window as any; w.isTauri=true; w.calls=[];
+    const frame={active:false,travel:[],history:[],colors:[],colorAgeMs:null,packets:0,message:null,rulesEnabled:false,ruleFirings:0,ruleError:null};
+    w.__TAURI_INTERNALS__={invoke:async(cmd:string,args:any)=>{
+      if(cmd!=='monitor_frame')w.calls.push({cmd,args});
+      if(cmd==='connect_device')return snapshot;
+      if(cmd==='set_monitor'){frame.active=args.enabled;return structuredClone(frame);}
+      if(cmd==='configure_automation')frame.rulesEnabled=args.enabled;
+      if(cmd==='monitor_frame')return structuredClone(frame);
+      return null;
+    }};
+  },{snapshot:fixture()});
+  await page.setViewportSize({width:1480,height:908});await page.goto('/');
+  await page.getByRole('button',{name:'Подключить',exact:true}).first().click();
+  await page.locator('[data-slot="105"]').click();
+  await page.getByRole('button',{name:'Сохранить действие',exact:true}).click();
+  await expect(page.locator('.draft-summary')).toContainText('1');
+  await page.getByRole('button',{name:'Отменить',exact:true}).click();
+  await expect(page.locator('[data-slot="105"] .key-binding')).toHaveCount(0);
+  await page.getByRole('button',{name:'Повторить',exact:true}).click();
+  await expect(page.locator('[data-slot="105"]')).toContainText('Vol +');
+  await page.getByRole('button',{name:'Снять выделение',exact:true}).click();
+  await page.locator('[data-slot="49"]').click();
+  await page.locator('[data-slot="50"]').click({modifiers:['Control']});
+  await page.getByRole('switch',{name:'Удерживать',exact:true}).check();
+  await page.getByRole('combobox',{name:'Действие жеста',exact:true}).selectOption('word');
+  await page.getByRole('button',{name:'Сохранить действие',exact:true}).click();
+  await page.getByRole('button',{name:'Сохранить профиль',exact:true}).click();
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('io.profiles.v1')!)[0]);
+  expect(saved.schemaVersion).toBe(2);expect(saved.automation.gestures).toHaveLength(2);
+  expect(saved.automation.gestures[1].slots).toEqual([49,50]);
+  await page.getByRole('button',{name:'Применить',exact:true}).click();
+  await expect(page.getByRole('dialog')).toContainText('Word');
+  await page.getByRole('button',{name:'Сохранить на компьютере',exact:true}).click();
+  await expect(page.locator('.draft-summary')).toContainText('Жесты компьютера включены');
+  const calls=await page.evaluate(()=>(window as any).calls);
+  expect(calls.some((c:any)=>c.cmd==='apply_changes'||c.cmd==='prepare_changes')).toBe(false);
+  const applied=calls.find((c:any)=>c.cmd==='configure_automation');
+  expect(applied.args.enabled).toBe(true);expect(applied.args.profile.gestures).toHaveLength(2);
+  await page.getByRole('button',{name:'Каталог',exact:true}).click();
+  await page.getByRole('button',{name:'Новое действие',exact:false}).click();
+  await page.getByRole('textbox',{name:'Название действия',exact:true}).fill('Мой сценарий');
+  await page.getByRole('combobox',{name:'Тип действия',exact:true}).selectOption('macro');
+  await page.getByRole('button',{name:'Добавить шаг',exact:false}).click();
+  await page.getByRole('combobox',{name:'Тип действия',exact:true}).last().selectOption('text');
+  await page.getByRole('textbox',{name:'Текст',exact:true}).fill('Hello');
+  await page.getByRole('button',{name:'Добавить в черновик',exact:true}).click();
+  await expect(page.locator('.catalog-list')).toContainText('Мой сценарий');
+  await page.locator('.page-scroll').evaluate(e=>e.scrollTo({top:0}));
+  await page.screenshot({path:'archive_data/ui-action-catalog.png'});
 });

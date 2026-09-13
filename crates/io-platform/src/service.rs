@@ -14,7 +14,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use io_core::depth::{DepthRule, DepthTrigger};
+use crate::action_runtime::ActionRuntime;
+use io_core::automation::{AutomationProfile, GestureEngine};
 
 type Job = Box<dyn FnOnce(&mut Worker) + Send>;
 struct Worker {
@@ -23,7 +24,8 @@ struct Worker {
     prepared: Option<PreparedChange>,
     monitor: Arc<Mutex<MonitorState>>,
     recovery_dir: PathBuf,
-    rules: Vec<DepthTrigger>,
+    rules: GestureEngine,
+    runtime: ActionRuntime,
     epoch: Instant,
 }
 
@@ -40,6 +42,7 @@ impl KeyboardService {
         let monitor = Arc::new(Mutex::new(MonitorState::default()));
         let heartbeat = Arc::new(Mutex::new(Instant::now()));
         let m = Arc::clone(&monitor);
+        let monitor_for_actions = Arc::clone(&monitor);
         let beat = Arc::clone(&heartbeat);
         std::thread::spawn(move || {
             let mut worker = Worker {
@@ -48,7 +51,8 @@ impl KeyboardService {
                 prepared: None,
                 monitor: m,
                 recovery_dir,
-                rules: Vec::new(),
+                rules: GestureEngine::new(AutomationProfile::default()),
+                runtime: ActionRuntime::new(Arc::clone(&monitor_for_actions)),
                 epoch: Instant::now(),
             };
             loop {
@@ -57,6 +61,18 @@ impl KeyboardService {
                     Err(mpsc::RecvTimeoutError::Disconnected) => break,
                     Err(mpsc::RecvTimeoutError::Timeout) => (),
                 }
+                {
+                    let mut state = worker.monitor.lock().expect("monitor");
+                    if state.rules_enabled {
+                        dispatch_actions(
+                            &mut worker.rules,
+                            &worker.runtime,
+                            &mut state,
+                            worker.epoch.elapsed().as_millis() as u64,
+                        );
+                    }
+                }
+
                 let active = worker.monitor.lock().expect("monitor").active;
                 if active {
                     if beat.lock().expect("heartbeat").elapsed() > Duration::from_secs(5) {
@@ -88,26 +104,14 @@ impl KeyboardService {
                                         if depth > 1000 || max > 1000 {
                                             continue;
                                         }
-                                        for rule in &mut worker.rules {
-                                            if rule.rule.slot != p[2] {
-                                                continue;
-                                            }
-                                            if let Some(action) = rule.sample(
-                                                depth * 10,
-                                                worker.epoch.elapsed().as_millis() as u64,
-                                            ) {
-                                                match crate::computer::execute(action) {
-                                                    Ok(()) => {
-                                                        state.rule_firings =
-                                                            state.rule_firings.saturating_add(1)
-                                                    }
-                                                    Err(e) => {
-                                                        state.rule_error = Some(e.message);
-                                                        state.rules_enabled = false;
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        let now = worker.epoch.elapsed().as_millis() as u64;
+                                        worker.rules.sample(p[2], depth * 10, now);
+                                        dispatch_actions(
+                                            &mut worker.rules,
+                                            &worker.runtime,
+                                            &mut state,
+                                            now,
+                                        );
                                     }
                                 }
                             }
@@ -206,22 +210,15 @@ impl KeyboardService {
         *self.heartbeat.lock().expect("heartbeat") = Instant::now();
         self.monitor.lock().expect("monitor").frame()
     }
-    pub fn configure_rules(&self, rules: Vec<DepthRule>, enabled: bool) -> Result<()> {
-        if rules.len() > 84 {
-            return Err(AppError::new("invalidRule", "Слишком много правил."));
-        }
-        let mut slots = std::collections::BTreeSet::new();
-        for rule in &rules {
-            rule.validate()?;
-            if !slots.insert(rule.slot)
-                || !crate::layout::PHYSICAL_KEYS
-                    .iter()
-                    .any(|(slot, _)| *slot == rule.slot)
+    pub fn configure_automation(&self, profile: AutomationProfile, enabled: bool) -> Result<()> {
+        profile.validate()?;
+        for rule in &profile.gestures {
+            if rule
+                .slots
+                .iter()
+                .any(|slot| !crate::layout::PHYSICAL_KEYS.iter().any(|(s, _)| s == slot))
             {
-                return Err(AppError::new(
-                    "invalidRule",
-                    "Выберите разные физические клавиши.",
-                ));
+                return Err(AppError::new("invalidRule", "Выберите физические клавиши."));
             }
         }
         self.request(move |w| {
@@ -232,10 +229,11 @@ impl KeyboardService {
                     "Сначала включите наблюдение.",
                 ));
             }
-            state.rules_enabled = enabled && !rules.is_empty();
+            w.runtime.cancel();
+            state.rules_enabled = enabled && !profile.gestures.is_empty();
             state.rule_firings = 0;
             state.rule_error = None;
-            w.rules = rules.into_iter().map(DepthTrigger::new).collect();
+            w.rules = GestureEngine::new(profile);
             Ok(())
         })
     }
@@ -381,12 +379,36 @@ impl Worker {
             .ok_or_else(|| AppError::new("notConnected", "Клавиатура не подключена к приложению."))
     }
     fn stop(&mut self) {
-        self.rules.clear();
+        self.runtime.cancel();
+        self.rules = GestureEngine::new(AutomationProfile::default());
         if let Some(device) = self.device.as_mut()
             && let Err(e) = device.stop_monitor()
         {
             self.monitor.lock().expect("monitor").message = Some(e.message);
         }
         self.monitor.lock().expect("monitor").pause();
+    }
+}
+
+fn dispatch_actions(
+    rules: &mut GestureEngine,
+    runtime: &ActionRuntime,
+    state: &mut MonitorState,
+    now: u64,
+) {
+    for id in rules.tick(now) {
+        if let Some(action) = rules.profile.actions.iter().find(|a| a.id == id) {
+            let variant = match std::env::consts::OS {
+                "linux" => &action.platform_commands.linux,
+                "macos" => &action.platform_commands.macos,
+                _ => &action.platform_commands.windows,
+            };
+            if let Err(e) = runtime.submit(variant.as_ref().unwrap_or(&action.command).clone()) {
+                state.rule_error = Some(e.message);
+                state.rules_enabled = false;
+                runtime.cancel();
+                break;
+            }
+        }
     }
 }

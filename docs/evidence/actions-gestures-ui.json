@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-14",
+  "stage": "action catalog, multi-key depth/hold gestures, profile v2, lighting preview",
+  "build": {
+    "path": "target\\release\\io-desktop.exe",
+    "sha256": "69dc563330733e30baa19810fd0f85a3d5b88fd8f3ada631145d9d7d8cd98c3f",
+    "command": "npm run desktop:build",
+    "result": "pass"
+  },
+  "checks": {
+    "rust_tests": 18,
+    "rust_clippy": "pass -D warnings",
+    "rust_fmt": "pass",
+    "typescript_tests": 8,
+    "playwright_scenarios": 5,
+    "frontend_build": "pass",
+    "prettier": "pass",
+    "research_python_tests": 12
+  },
+  "native_ui": {
+    "method": "Computer Use, release WebView, observed accessibility and screenshot",
+    "connect": "configuration read successfully",
+    "monitor": "started, incoming small travel visible; stopped and observed Observe button restored",
+    "automation_started": false,
+    "configuration_writes": false,
+    "firmware_writes": false,
+    "final_state": "connected, monitor stopped, no draft changes"
+  },
+  "ui_coverage": [
+    "84 keys at 1480/960, RU/EN and light/dark",
+    "selection independent of travel; release and expired IPC",
+    "bounded history, clear selection, animated lighting preview",
+    "consistent responsive layout on keyboard and lighting",
+    "gesture draft undo/redo, multi-key hold, profile v2, apply/configure with mocked IPC",
+    "catalog sequence creation"
+  ],
+  "limits": [
+    "Mock IPC does not prove physical actuation or Windows action execution.",
+    "Full FB travel/address/release correlation still requires user key presses.",
+    "No scripted, LLM, mail, Telegram or live RGB integrations executed.",
+    "Firmware 0x32 and LED findings are static only."
+  ]
+}

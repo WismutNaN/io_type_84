@@ -73,13 +73,17 @@ async fn prepare_recovery(service: tauri::State<'_, KeyboardService>) -> Result<
 }
 
 #[tauri::command]
-async fn configure_rules(
-    rules: Vec<io_core::depth::DepthRule>,
+fn validate_automation(profile: io_core::automation::AutomationProfile) -> Result<()> {
+    profile.validate()
+}
+#[tauri::command]
+async fn configure_automation(
+    profile: io_core::automation::AutomationProfile,
     enabled: bool,
     service: tauri::State<'_, KeyboardService>,
 ) -> Result<()> {
     let s = service.inner().clone();
-    background(move || s.configure_rules(rules, enabled)).await
+    background(move || s.configure_automation(profile, enabled)).await
 }
 
 fn app_context() -> tauri::Context<tauri::Wry> {
@@ -103,7 +107,8 @@ pub fn run() {
             monitor_frame,
             clear_history,
             set_history_capacity,
-            configure_rules,
+            configure_automation,
+            validate_automation,
             prepare_changes,
             apply_changes,
             prepare_recovery

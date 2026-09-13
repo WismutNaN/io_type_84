@@ -3,4 +3,5 @@
 pub mod application;
 pub mod keyboard;
 
+pub mod automation;
 pub mod depth;

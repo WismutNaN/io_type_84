@@ -48,3 +48,18 @@ export type KeyPress = { sequence: number, slot: number, peakUm: number, };
 export type LiveColor = { ledId: number, color: Rgb, };
 
 export type MonitorFrame = { active: boolean, travel: Array<KeyTravel>, history: Array<KeyPress>, colors: Array<LiveColor>, colorAgeMs: number | null, packets: number, message: string | null, rulesEnabled: boolean, ruleFirings: number, ruleError: string | null, };
+
+
+export type ActionCommand = { "kind": "media", action: ComputerAction, } | { "kind": "key", key: number, modifiers: number, } | { "kind": "text", text: string, } | { "kind": "application", application: ApplicationId, } | { "kind": "macro", steps: Array<ActionStep>, };
+
+export type ApplicationId = "word" | "notepad" | "calculator";
+
+export type ActionStep = { "kind": "key", key: number, modifiers: number, } | { "kind": "text", text: string, } | { "kind": "delay", ms: number, } | { "kind": "media", action: ComputerAction, };
+
+export type ActionDefinition = { id: string, name: string, command: ActionCommand, platformCommands: PlatformCommands, };
+
+export type GestureRule = { id: string, slots: Array<number>, thresholdUm: number, releaseUm: number, holdMs: number, actionId: string, };
+
+export type AutomationProfile = { actions: Array<ActionDefinition>, gestures: Array<GestureRule>, };
+
+export type PlatformCommands = { windows: ActionCommand | null, linux: ActionCommand | null, macos: ActionCommand | null, };

@@ -1,3 +1,6 @@
+import { readAutomation, defaultAutomation, migrateDepthRules } from './computer-rules';
+import type { AutomationProfile } from '../../shared/contracts/generated';
+type WorkspaceEdit = Edit | { kind: 'automation'; value: AutomationProfile };
 import { computed, ref, onScopeDispose } from 'vue';
 import { ageFrame } from './telemetry';
 import { invoke, isTauri } from '@tauri-apps/api/core';
@@ -25,14 +28,33 @@ const emptyFrame = (): MonitorFrame => ({
 export function useWorkspace() {
   const native = isTauri();
   const snapshot = ref<KeyboardSnapshot | null>(null),
-    edits = ref<Edit[]>([]),
-    redo = ref<Edit[][]>([]),
+    edits = ref<WorkspaceEdit[]>([]),
+    redo = ref<WorkspaceEdit[][]>([]),
     undoCounts = ref<number[]>([]);
   const busy = ref(''),
     error = ref(''),
     notice = ref(''),
     connected = ref(false),
     preview = ref<ChangePreview | null>(null);
+  const appliedAutomation = ref<AutomationProfile>(defaultAutomation());
+  try {
+    const stored = localStorage.getItem('io.automation.v1');
+    appliedAutomation.value = stored
+      ? readAutomation(JSON.parse(stored))
+      : migrateDepthRules(JSON.parse(localStorage.getItem('io.rules.v1') ?? '[]'));
+  } catch {
+    error.value = 'Не удалось прочитать программные действия.';
+  }
+  const automation = computed(() =>
+    edits.value.reduce((p, e) => (e.kind === 'automation' ? e.value : p), appliedAutomation.value),
+  );
+  const automationDirty = computed(
+    () => JSON.stringify(automation.value) !== JSON.stringify(appliedAutomation.value),
+  );
+  const hardwareEdits = computed(() =>
+    edits.value.filter((e): e is Edit => e.kind !== 'automation'),
+  );
+  const startActions = ref(true);
   const live = ref<MonitorFrame>(emptyFrame());
   const receivedAt = ref(performance.now());
   const clock = ref(performance.now());
@@ -49,7 +71,9 @@ export function useWorkspace() {
   } catch {
     notice.value = 'Не удалось прочитать локальные профили. Можно импортировать резервный JSON.';
   }
-  const draft = computed(() => (snapshot.value ? projectEdits(snapshot.value, edits.value) : null));
+  const draft = computed(() =>
+    snapshot.value ? projectEdits(snapshot.value, hardwareEdits.value) : null,
+  );
   function message(e: unknown) {
     return typeof e === 'object' && e && 'message' in e ? String(e.message) : String(e);
   }
@@ -78,18 +102,28 @@ export function useWorkspace() {
       ) {
         connected.value = false;
         live.value.active = false;
+        live.value.rulesEnabled = false;
         preview.value = null;
       }
     } finally {
       busy.value = '';
     }
   }
-  function stage(...values: Edit[]) {
+  function stage(...values: WorkspaceEdit[]) {
     if (!snapshot.value || busy.value || !values.length) return;
     if (edits.value.length + values.length > 512) {
       error.value = 'Черновик достиг лимита. Примените изменения или отмените часть действий.';
       return;
     }
+    for (const value of values)
+      if (value.kind === 'automation') {
+        try {
+          readAutomation(value.value);
+        } catch (e) {
+          error.value = message(e);
+          return;
+        }
+      }
     edits.value.push(...clone(values));
     undoCounts.value.push(values.length);
     redo.value = [];
@@ -120,6 +154,7 @@ export function useWorkspace() {
   }
   async function connect() {
     await run('Подключение…', async () => {
+      const localAutomation = clone(automation.value);
       const local = !connected.value && draft.value ? clone(draft.value) : null;
       connected.value = false;
       const next = await invoke<KeyboardSnapshot>('connect_device');
@@ -128,7 +163,10 @@ export function useWorkspace() {
       discard();
       live.value = emptyFrame();
       if (local) {
-        edits.value = profileEdits(next, local);
+        edits.value = [
+          ...profileEdits(next, local),
+          { kind: 'automation', value: localAutomation },
+        ];
         undoCounts.value = edits.value.length ? [edits.value.length] : [];
       }
       notice.value = local
@@ -141,6 +179,7 @@ export function useWorkspace() {
       await invoke('disconnect_device');
       connected.value = false;
       live.value.active = false;
+      live.value.rulesEnabled = false;
       notice.value = 'Снимок остаётся доступен для редактирования';
     });
   }
@@ -150,6 +189,7 @@ export function useWorkspace() {
       snapshot.value = next;
       discard();
       live.value.active = false;
+      live.value.rulesEnabled = false;
       notice.value = 'Состояние обновлено';
     });
   }
@@ -168,6 +208,7 @@ export function useWorkspace() {
       receivedAt.value = performance.now();
     } catch {
       live.value.active = false;
+      live.value.rulesEnabled = false;
     } finally {
       polling = false;
     }
@@ -190,21 +231,69 @@ export function useWorkspace() {
     if (!snapshot.value) return;
     await run('Проверка изменений…', async () => {
       recoveryPreview.value = false;
-      preview.value = await invoke<ChangePreview>('prepare_changes', {
-        request: { baseRevision: snapshot.value!.revision, edits: clone(edits.value) },
-      });
+      startActions.value = automationDirty.value
+        ? automation.value.gestures.length > 0
+        : live.value.rulesEnabled;
+      readAutomation(automation.value);
+      if (native) await invoke('validate_automation', { profile: clone(automation.value) });
+      preview.value = hardwareEdits.value.length
+        ? await invoke<ChangePreview>('prepare_changes', {
+            request: { baseRevision: snapshot.value!.revision, edits: clone(hardwareEdits.value) },
+          })
+        : { token: '', changes: [] };
+    });
+  }
+  async function setActionsEnabled(enabled: boolean) {
+    await run(enabled ? 'Включение действий…' : 'Остановка…', async () => {
+      if (enabled && !live.value.active)
+        live.value = await invoke<MonitorFrame>('set_monitor', { enabled: true });
+      await invoke('configure_automation', { profile: clone(appliedAutomation.value), enabled });
+      await poll();
     });
   }
   async function apply() {
     if (!preview.value) return;
-    const token = preview.value.token;
+    const prepared = preview.value;
+    const next = clone(automation.value);
+    const isRecovery = recoveryPreview.value;
     preview.value = null;
-    await run('Запись и проверка…', async () => {
-      const result = await invoke<ApplyResult>('apply_changes', { token });
-      snapshot.value = result.snapshot;
+    await run('Применение…', async () => {
+      if (prepared.token && prepared.changes.length) {
+        const result = await invoke<ApplyResult>('apply_changes', { token: prepared.token });
+        snapshot.value = result.snapshot;
+        edits.value = [{ kind: 'automation', value: next }];
+        undoCounts.value = [1];
+        redo.value = [];
+        live.value.active = false;
+        live.value.rulesEnabled = false;
+        notice.value = 'Настройки клавиатуры применены и проверены.';
+      }
+      if (isRecovery) {
+        edits.value = automationDirty.value ? [{ kind: 'automation', value: next }] : [];
+        undoCounts.value = edits.value.length ? [1] : [];
+        notice.value = 'Настройки клавиатуры восстановлены.';
+        return;
+      }
+      const previous = localStorage.getItem('io.automation.v1');
+      localStorage.setItem('io.automation.v1', JSON.stringify(next));
+      try {
+        if (native && connected.value) {
+          const enabled = startActions.value && next.gestures.length > 0;
+          if (enabled && !live.value.active)
+            live.value = await invoke<MonitorFrame>('set_monitor', { enabled: true });
+          await invoke('configure_automation', { profile: next, enabled });
+        }
+      } catch (e) {
+        if (previous === null) localStorage.removeItem('io.automation.v1');
+        else localStorage.setItem('io.automation.v1', previous);
+        throw e;
+      }
+      appliedAutomation.value = next;
       discard();
-      live.value.active = false;
-      notice.value = 'Применено · обратное чтение совпало';
+      notice.value =
+        native && connected.value && startActions.value && next.gestures.length
+          ? 'Применено. Жесты компьютера включены.'
+          : 'Применено. Действия сохранены на компьютере.';
     });
   }
   async function recovery() {
@@ -218,7 +307,8 @@ export function useWorkspace() {
   function saveProfile(name: string) {
     if (!draft.value || !name.trim()) return;
     const profile: LocalProfile = {
-      schemaVersion: 1,
+      schemaVersion: 2,
+      automation: clone(automation.value),
       name: name.trim().slice(0, 100),
       savedAt: new Date().toISOString(),
       snapshot: clone(draft.value),
@@ -244,7 +334,8 @@ export function useWorkspace() {
   function exportProfile(name: string) {
     if (!draft.value) return;
     const value: LocalProfile = {
-      schemaVersion: 1,
+      schemaVersion: 2,
+      automation: clone(automation.value),
       name: name.trim() || 'Мой профиль',
       savedAt: new Date().toISOString(),
       snapshot: clone(draft.value),
@@ -273,6 +364,12 @@ export function useWorkspace() {
     displayLive,
     profiles,
     recoveryPreview,
+    automation,
+    appliedAutomation,
+    automationDirty,
+    hardwareEdits,
+    startActions,
+    setActionsEnabled,
     stage,
     undo,
     redoEdit,

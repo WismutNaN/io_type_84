@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { t, mm } from '../ui/preferences';
-import { computerActions } from '../../features/editor/computer-rules';
-import type { DepthRule } from '../contracts/generated';
+import { actionLabel as catalogLabel } from '../../features/editor/computer-rules';
+import type { AutomationProfile } from '../contracts/generated';
 import { keyboardKeys, keyboardBounds } from './layout';
 import type { KeyboardSnapshot, MonitorFrame } from '../contracts/generated';
 import { hexColor, bindingName } from '../../features/editor/model';
 import { physicalKeyCodes } from './keycodes';
 const props = defineProps<{
   selected: number[];
-  rules?: DepthRule[];
+  automation?: AutomationProfile;
   snapshot: KeyboardSnapshot | null;
   live: MonitorFrame;
   view: 'layout' | 'travel' | 'colors';
@@ -63,8 +63,12 @@ function actionLabel(slot: number, original: string) {
   );
 }
 function deepLabel(slot: number) {
-  const r = props.rules?.find((r) => r.slot === slot);
-  return r ? computerActions.find((a) => a.id === r.action)?.short : null;
+  const matches = props.automation?.gestures.filter((r) => r.slots.includes(slot)) ?? [];
+  const first = matches[0];
+  return first
+    ? catalogLabel(props.automation?.actions.find((a) => a.id === first.actionId)) +
+        (matches.length > 1 ? ` +${matches.length - 1}` : '')
+    : null;
 }
 function navigate(event: KeyboardEvent, slot: number) {
   const key = keyboardKeys.find((k) => k.slot === slot)!;

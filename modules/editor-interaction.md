@@ -14,15 +14,15 @@
 | `src/features/editor/Inspector.vue`, `DksEditor.vue`        | Сценарии аппаратных назначений и этапов хода                   |
 | `src/features/editor/DepthActions.vue`, `computer-rules.ts` | Настройка/сохранение локальных компьютерных условий            |
 | `src/shared/ui/preferences.ts`, `en.json`                   | RU/EN, тема, формат единиц                                     |
-| `crates/io-core/src/depth.rs`                               | Детерминированный DepthTrigger без ОС и собственного таймера   |
-| `crates/io-platform/src/computer.rs`                        | Узкий Windows adapter для четырёх media-действий               |
-| `crates/io-platform/src/service.rs`                         | Сериализация configure_rules и FB-потока с HID-операциями      |
+| `crates/io-core/src/automation.rs`                               | GestureEngine, каталог и платформенные варианты без ОС   |
+| `crates/io-platform/src/action_runtime.rs`, `computer.rs`                        | Очередь и Windows adapter для действий каталога               |
+| `crates/io-platform/src/service.rs`                         | Сериализация configure_automation и FB-потока с HID-операциями      |
 
 ## Контракты и инварианты
 
-`DepthRule {slot, thresholdUm, releaseUm, action}`. В v1 одно условие на физический слот, до 84. `ComputerAction`: volumeUp, volumeDown, mute, playPause. Валидация дублируется на IPC-границе, core проверяет диапазон и гистерезис, platform — физические слоты.
+`ActionDefinition` и `GestureRule` описаны в [каталоге действий](action-catalog.md). Несколько независимых жестов на клавишу или группу до 8; общий черновик и профиль v2. Старый `DepthRule` сохранён только как исходная модель миграции, не runtime текущего интерфейса.
 
-`configure_rules(rules, enabled)` проходит через тот же worker, что и устройство. Нужен активный монитор. Запуск не восстанавливается после перезапуска или новой HID-сессии. Stop/reconnect/apply/watchdog выключают правила. `MonitorFrame` содержит rulesEnabled/ruleFirings/ruleError. Ошибка ОС останавливает исполнение, не скрывается.
+`configure_automation(profile, enabled)` проходит через тот же worker, что и устройство. Нужен активный монитор. Запуск не восстанавливается после перезапуска или новой HID-сессии. Stop/reconnect/apply/watchdog выключают правила. `MonitorFrame` содержит rulesEnabled/ruleFirings/ruleError. Ошибка ОС останавливает исполнение, не скрывается.
 
 Порог 300–3200 µm, возврат минимум на 100 µm меньше. UI выбирает зазор 600 µm (с ограничением до нуля). Один переход вверх — одно действие. После тишины 600 мс движок разоружается до измеренного возврата. История движения использует отдельный порог 300/150 µm и не задаёт семантику правил.
 
@@ -30,11 +30,11 @@
 
 ## Хранение
 
-`io.locale`, `io.theme` — предпочтения. `io.rules.v1` — JSON-массив условий, исполнение при загрузке выключено. `io.profiles.v1` пока включает только устройство, не программные условия. Browser и Tauri storage отличаются по origin. История/ADC не сохраняются.
+`io.locale`, `io.theme` — предпочтения. Каталог/жесты входят в общий черновик и profile v2; применённая версия хранится в `io.automation.v1`, старые `io.rules.v1` мигрируют. Текущие контракты и ограничения — [каталог действий](action-catalog.md). Browser и Tauri storage отличаются по origin. История/ADC не сохраняются.
 
 ## Проверки
 
-Core: переход, удержание, возврат, возобновление после паузы, неверные границы. Monitor: шум, ограничение 20, потерянный release. TS: истечение данных при зависшем IPC. Playwright: оба размера, оба языка/темы, клавиши и формы, независимый выбор и pressed, программные назначения без выполнения ОС. Реальный Windows SendInput и глубокие PgUp/PgDn требуют совместной физической приёмки.
+Core: переход, удержание, возврат, возобновление после паузы, неверные границы. Monitor: шум, обрезка по трём ширинам видимой строки, потерянный release. TS: истечение данных при зависшем IPC. Playwright: оба размера, оба языка/темы, клавиши и формы, независимый выбор и pressed, программные назначения без выполнения ОС. Реальный Windows SendInput и глубокие PgUp/PgDn требуют совместной физической приёмки.
 
 ## Границы
 
