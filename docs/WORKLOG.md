@@ -49,3 +49,19 @@
 **Артефакты:** [каркас и команды](DEVELOPMENT.md), [UI](UI.md), [статус](STATUS.md), `target/release/io-desktop.exe` (локальная сборка, не в Git).
 
 **Контрольная точка:** коммит `feat: собрать каркас Rust Tauri Vue с макетом IO Type 84`.
+
+## 2026-09-13 — AK820, Aether-HE и границы HFD-совместимости
+
+**Выполнено:** разобраны два новых локальных референса, их идентификаторы, codec, размеры таблиц, RT, lighting, TFT, macro и исследовательские материалы. Проверены цепочка fpb → QMK/SonixFlasherC, официальный SN32F299 manual и ARM Cortex-M0 ISA. В коде сайта IO сопоставлены light box, side light, temporary RGB, simulation/FB и macro capacity. Точные локальные ревизии и файлы перечислены в [исследовании](REFERENCE_PROJECTS.md).
+
+**Offline проверка:** собственный harness проверяет SHA-256 референсов, извлекает только рассмотренные чистые функции. Rust `build_frame` AK820 воспроизвёл 80/80 пакетов; Mini60 `build_table_read` — 79/79 обычных GET (68 с key IDs исключён). RT decode → encode совпал для 128 записей; parser Mini60 без отсечения padding дал бы 133. Stacks чужих приложений и Cargo build scripts не запускались. [Отчёт](evidence/reference-codec-comparison.json).
+
+**Устройство:** `tools/probe_aux_lighting.py` сверил точный FF68 descriptor и GET info/identity 1.17, отправил GET `1B` на 24 байта. За 1000 мс ответ не получен. Скрипт остановился без повторов, GET `1D` пропущен, handle закрыт. Два HID Output reports являются запросами чтения; конфигурационных SET не было. [Сырые данные](evidence/aux-lighting-probe.json).
+
+**Новые результаты:** общий framing подтверждён, но приложения не содержат модель IO; Mini60 имеет другие размеры RT/RGB и keymap write. Временный RGB `32` вопреки имени GET отправляет данные. В parser IO `55 FB` байты 2/3 означают keyValue/calibrationStatus, что совпадает с §12 HFD-документа Aether. Промежуточное утверждение о различии этих полей исправлено при финальной сверке. Raw macro capacity=37376, а экспортные 512 могут быть fallback сайта. Дизассемблирование reset IO показывает immediate Thumb-2 BIC/MOV; это не соответствует простой гипотезе Cortex-M0 SN32F299. Точный MCU/OEM и путь прошивки не установлены.
+
+**Проверки:** 10 Python unittest прошли (6 HEX + 4 fail-closed границы probe); offline harness завершился без расхождений. JSON evidence и локальные ссылки новых документов проверены; `git diff --check` чист. Rust/Vue код не менялся; сборка desktop и ручной UI smoke test в этой итерации не повторялись.
+
+**Ограничения:** тайм-аут не доказывает отсутствие команды/панели. SET, simulation, calibration, reset и OTA не запускались; прошивальщики и сторонние приложения не исполнялись. Совместимость framing/RT не доказывает firmware compatibility. Не переносили код референсов в продукт. Отсутствие лицензии у Aether зафиксировано для будущего переноса, анализ и самостоятельная реализация продолжаются.
+
+**Контрольная точка:** коммит `research: проверить совместимость AK820 и Aether с IO White`.

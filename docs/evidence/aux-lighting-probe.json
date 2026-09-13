@@ -1,0 +1,29 @@
+{
+  "captured_at": "2026-09-13T18:09:56.012845+00:00",
+  "vid": "0C45",
+  "pid": "80D6",
+  "product": "IO Type 84 Magnetic White",
+  "method": "Native hidapi; fixed GET 10/1B/1D; exact descriptor and identity; no retries",
+  "packets": [
+    {
+      "name": "device_info",
+      "cmd": "0x10",
+      "request_hex": "aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "hidapi_bytes_written": 65,
+      "response_hex": "55 10 30 00 00 00 01 00 00 00 00 92 45 0c d6 80 17 01 00 00 66 01 0c 11 0a 00 00 00 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "payload_hex": "00 00 00 92 45 0c d6 80 17 01 00 00 66 01 0c 11 0a 00 00 00 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "validated": true
+    },
+    {
+      "name": "light_box",
+      "cmd": "0x1B",
+      "request_hex": "aa 1b 18 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "hidapi_bytes_written": 65,
+      "response_hex": ""
+    }
+  ],
+  "configuration_writes": 0,
+  "physical_panel_mapping_verified": false,
+  "status": "stopped",
+  "error": "Expected 64-byte reply, received 0"
+}

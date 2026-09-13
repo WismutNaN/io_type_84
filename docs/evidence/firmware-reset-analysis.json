@@ -1,0 +1,68 @@
+{
+  "source_sha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "method": "Static Capstone Thumb disassembly at inferred reset vector; no firmware execution",
+  "capstone_version": "5.0.7",
+  "reset_code_hex": "0a 48 01 68 21 f4 80 31 01 60 09 48 4f f4 80 31 01 60 08 48 00 47",
+  "instructions": [
+    {
+      "address": "0x204",
+      "bytes": "0a 48",
+      "mnemonic": "ldr",
+      "operands": "r0, [pc, #0x28]"
+    },
+    {
+      "address": "0x206",
+      "bytes": "01 68",
+      "mnemonic": "ldr",
+      "operands": "r1, [r0]"
+    },
+    {
+      "address": "0x208",
+      "bytes": "21 f4 80 31",
+      "mnemonic": "bic",
+      "operands": "r1, r1, #0x10000"
+    },
+    {
+      "address": "0x20c",
+      "bytes": "01 60",
+      "mnemonic": "str",
+      "operands": "r1, [r0]"
+    },
+    {
+      "address": "0x20e",
+      "bytes": "09 48",
+      "mnemonic": "ldr",
+      "operands": "r0, [pc, #0x24]"
+    },
+    {
+      "address": "0x210",
+      "bytes": "4f f4 80 31",
+      "mnemonic": "mov.w",
+      "operands": "r1, #0x10000"
+    },
+    {
+      "address": "0x214",
+      "bytes": "01 60",
+      "mnemonic": "str",
+      "operands": "r1, [r0]"
+    },
+    {
+      "address": "0x216",
+      "bytes": "08 48",
+      "mnemonic": "ldr",
+      "operands": "r0, [pc, #0x20]"
+    },
+    {
+      "address": "0x218",
+      "bytes": "00 47",
+      "mnemonic": "bx",
+      "operands": "r0"
+    }
+  ],
+  "literal_pool": {
+    "0x230": "0x4001f004",
+    "0x234": "0x4001f000",
+    "0x238": "0x1c1"
+  },
+  "mcu_identified": false
+}

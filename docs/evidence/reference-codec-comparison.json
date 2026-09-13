@@ -1,0 +1,39 @@
+{
+  "captured_at": "2026-09-13",
+  "method": "Offline execution of hash-pinned pure codec functions on existing IO fixtures; no HID",
+  "sources": [
+    {
+      "url": "https://github.com/wsclx/ak820pro-modder",
+      "commit": "fe93c13972445f92b00b485875da2811173eb940",
+      "file": "crates/ak820-protocol/src/protocol.rs",
+      "sha256": "88cae171734661c384193ec3c0da7d4b88646f39f71697c5bb326bf874988d1f"
+    },
+    {
+      "url": "https://github.com/MrWhosNexus/Aether-HE",
+      "commit": "2179fd768fcdbb86f59c4c240b4d4cfcbc18936f",
+      "file": "protocol_mini60.py",
+      "sha256": "68fc4f3a575557bfd24e593ee8dfb1adc2ec7fbd54181e2837051c57a12bd7b8"
+    }
+  ],
+  "fixture_sha256": "714f3453a15fa8a011dbd168a34f05605a46b7e0b8299db31691d5dcf04d21ca",
+  "ak_build_frame": {
+    "matched": 80,
+    "total": 80
+  },
+  "mini_build_table_read": {
+    "matched": 79,
+    "excluded": "0x68 carries key IDs; not an empty table-read request"
+  },
+  "mini_actuation_round_trip": {
+    "valid_records": 128,
+    "untrimmed_parser_records": 133,
+    "rt_precision": 0
+  },
+  "macro_space": {
+    "raw_bytes_2_3_hex": "00 92",
+    "raw_le16": 37376,
+    "website_profile_value": 512,
+    "actual_usable_capacity_verified": false
+  },
+  "limits": "Tests prove framing and RT record compatibility for captured reads only; no SET, firmware or whole-application compatibility claim."
+}
