@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-09-14",
+  "build": "npm run desktop:build; Tauri custom-protocol release EXE",
+  "viteStoppedBeforeFinalLaunch": true,
+  "port1420NotListening": true,
+  "nativeWindowRendered": true,
+  "vueToRustUsbRead": { "success": true, "firmware": "1.17", "message": "Конфигурация прочитана с клавиатуры" },
+  "uiChecks": [
+    "A selection displays decoded snapshot",
+    "monitor receives FB and shows per-address travel and history",
+    "explicit local example distinct from connected keyboard",
+    "WASD gradient stages four colors and custom effect",
+    "one undo returns all four colors and effect; redo restores the group"
+  ],
+  "finalWindow": { "connected": true, "monitorActive": false, "draftEmpty": true },
+  "automatedChecks": { "rustTests": 11, "typescriptModelTests": 5, "vueTypecheck": true, "viteBuild": true, "clippyDenyWarnings": true, "rustfmt": true, "prettier": true },
+  "limitations": [
+    "Full physical key travel and release not confirmed",
+    "Native UI interactions do not prove execution of all configured firmware actions",
+    "No power-cycle persistence test"
+  ]
+}

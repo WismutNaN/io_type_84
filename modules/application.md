@@ -1,5 +1,7 @@
 # Модуль: прикладные сценарии и профили
 
+**Реализация 2026-09-14:** DTO — `io-core/src/keyboard.rs`; IO-specific prepare/apply/recovery — `io-platform/src/changes.rs` и `service.rs`; Draft/undo/localStorage — `src/features/editor/workspace.ts`. Собственный JSON v1 и частичный IO Vision импорт работают. [Точный контракт и хранение](../docs/DEVELOPMENT.md). Остальные типы и пути ниже — целевая архитектура, не перечень существующих классов.
+
 **Ответственность:** координация доменных моделей, операций устройства и локального хранения. **Расположение:** `crates/io-core/src/application/`.
 
 ## Публичный интерфейс

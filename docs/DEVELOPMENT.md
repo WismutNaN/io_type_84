@@ -1,53 +1,65 @@
-# Разработка каркаса
+# Разработка приложения
 
-Актуально на 2026-09-13. Назначение продукта и запуск — в [корневом README](../README.md); последующие задачи — в [PLAN](PLAN.md). Этот файл описывает реализованную основу.
+Актуально: 2026-09-14. Запуск и назначение — [README](../README.md), фактические ограничения — [STATUS](STATUS.md).
 
-## Что находится в коде
+## Код и границы
 
-| Путь | Назначение |
+| Путь | Ответственность |
 |---|---|
-| crates/io-core | Независимые Rust-контракты прикладного слоя; сейчас AppInfo / DeviceAccess |
-| crates/io-platform | Сведения о платформе; место будущих HID/Windows/storage adapters |
-| crates/io-cli | help / version / info; HID ещё отсутствует |
-| src-tauri | Окно, сборка ресурсов и команда app_info |
-| src/App.vue | Навигация, состояния прототипа и проверка связи с Rust |
-| src/shared/keyboard-view | 84 клавиши, координаты макета, локальный выбор |
-| src/shared/contracts | Сгенерированные DTO и один Tauri adapter |
-| tools | Отдельные исследовательские утилиты Python, не зависимости приложения |
+| `crates/io-core/src/keyboard.rs` | Независимые serde/ts-rs DTO конфигурации, Edit, ChangePreview, MonitorFrame, AppError |
+| `crates/io-platform/src/protocol.rs` | Строгие AA/55 кадры и проверка ответов |
+| `crates/io-platform/src/device.rs` | hidapi, точная модель White 1.17, allowlist GET, raw snapshot/decode |
+| `crates/io-platform/src/changes.rs` | Модельная валидация и patch сохраняемых байтов, backup, SET/readback |
+| `crates/io-platform/src/service.rs` | Единственный владелец HID, bounded queue, watchdog, recovery |
+| `crates/io-platform/src/monitor.rs` | Разбор FB, свежесть, гистерезис и 20 событий в памяти |
+| `crates/io-cli` | Диагностика info/snapshot/colors/monitor N; без настроечных SET |
+| `src-tauri/src/lib.rs` | Composition root, async IPC через spawn_blocking, остановка worker при Exit |
+| `src/features/editor/workspace.ts` | Состояние UI, группы undo/redo, IPC, local profiles |
+| `src/features/editor/model.ts` | Проекция Edit в черновик, имена действий, проверка собственной JSON-схемы |
+| `src/features/editor/io-vision-profile.ts` | Частичный импорт сайта: только известные поля, отдельный отчёт |
+| `src/features/editor/*Editor.vue`, `Inspector.vue` | Формы макросов, DKS и настройки выделенной группы |
+| `src/shared/keyboard-view` | Реальная геометрия 84 клавиш, logical code, sparse slot и отображение |
+| `src/App.vue` | Рабочее пространство, редактор света, профили/параметры, применение |
 
-Папки остальных доменов из архитектуры добавляются с реализацией. Пустые классы Device/Rule/Scene не выдаются за работающие агрегаты. Core не зависит от Tauri, hidapi или Win32. `default-members` workspace позволяют выполнять `cargo test` для core/platform/cli без desktop; `--workspace` включает Tauri.
+Core не зависит от Tauri/Win32/hidapi. IO-specific byte layout и ограничения относятся к platform adapter. Разделение будущих доменных агрегатов описано в `modules/`, но наличие предложенного типа там не означает его реализации. Pinia/router и отдельный процесс агента пока не требуются.
 
-## Контракты
+## IPC и поток данных
 
-Rust — источник DTO. После изменения `crates/io-core/src/application.rs` выполнить `npm run contracts` и закоммитить `src/shared/contracts/generated.ts` вместе с Rust-кодом. Контрактный тест обнаруживает расхождение. Версии приложения пока синхронизируются вручную в Cargo workspace, package.json, tauri.conf.json и UI.
+Rust — источник DTO: после изменения `keyboard.rs`/`application.rs` выполнить `npm run contracts`. Контрактный тест проверяет совпадение с committed TS.
 
-`app_info` возвращает версию, ОС и `deviceAccess: notImplemented`. Это состояние реализации, а не результат USB discovery. `connectShell()` отличает browser preview, ответ desktop, загрузку и ошибку. Произвольного HID IPC нет. Shell/filesystem plugins не подключены.
+Команды: `app_info`, `connect_device`, `disconnect_device`, `refresh_device`, `set_monitor`, `monitor_frame`, `clear_history`, `prepare_changes`, `apply_changes`, `prepare_recovery`. Произвольного raw HID, shell и filesystem IPC нет. `app_info.deviceAccess = available` означает реализацию транспорта, а не подключённую клавиатуру.
 
-## Геометрия клавиатуры
+Worker принимает до 16 работ, последовательно исполняет команды, дренирует до 64 входящих уведомлений за итерацию. UI получает агрегированное состояние раз в 60 мс без перекрытия polling. Каждый HID-обмен ограничен 1 с. После timeout — новый handle; автоматического повтора SET нет. После начала apply UI ждёт фактического завершения, ранняя «отмена» не предоставляется.
 
-Источник положения клавиш — скриншот владельца от 2026-09-13. В архиве: `archive_data/layout/owner-layout-2026-09-13.png`, SHA-256 `e92c99f1f4266c1485df324271d007f288aa6232ee7e326b5250cba7ea7e7762`. Цвета скриншота не интерпретируются как подсветка. Модель отображается нейтрально до чтения RGB.
+## Хранение
 
-Координаты относительные, в масштабе изображения, не миллиметры и не стандартные U. Сохранены группы F-клавиш, положение Print/Home/End, Ins/PgUp/Del/PgDn, длинные Space и R-Shift, отдельный блок стрелок. `slot` сопоставляется с [проверенной картой](evidence/layout-reference.json) независимо от геометрии. LED-панель не размещается на схеме по догадке.
+- Локальные профили: WebView localStorage `io.profiles.v1`, до 40 документов, экспорт JSON schemaVersion 1. Browser preview и desktop имеют разные origin/storage. Формат пока содержит конфигурацию устройства, без RuleSet/сцен. Чтение повреждённых полей отклоняется до замены состояния.
+- Recovery: Tauri `app_data_dir()/recovery/recovery-<nanoseconds>.json`. На Windows обычно `%APPDATA%/io.github.wismutnan.io-type-84/recovery`. Raw before/target и список блоков, schema_version 1. Файл создаётся уникальным именем, `create_new` + `write_all` + `sync_all` до SET; существующие файлы не перезаписываются. Автоматической очистки пока нет.
+- При росте макрообласти дополнительные затрагиваемые байты сначала читаются и добавляются в backup. Восстановление последней операции — тоже отдельный план с новым backup и GET-сверкой.
+- История нажатий и ADC не пишутся в профили/на диск. CLI monitor печатает ограниченную диагностику в stdout; постоянного фонового логирования нет.
 
-## Проверки
+## Проверки и запуск
 
 ```powershell
 npm ci
 npm run check
-cargo run -p io-cli -- --help
-cargo run -p io-cli -- info
+npm run desktop:dev
 npm run desktop:build
-python -m unittest discover -s tools -p 'test_*.py'
+cargo run -p io-cli -- info
+cargo run -p io-cli -- snapshot
+cargo run -p io-cli -- monitor 20
 ```
 
-Python 3.10+ нужен только для исследовательских утилит. Rust-тест упаковки выполняется с `io-desktop/custom-protocol`, проверяет включение HTML/JS/CSS и отсутствие dev-режима. Он не заменяет проверку настоящего WebView и IPC.
+`check`: Prettier, Vue/TS, Vite, 5 TS-тестов модели/импорта, rustfmt, Rust workspace tests, Clippy `-D warnings`. Rust-тест упаковки требует `io-desktop/custom-protocol` и проверяет наличие HTML/JS/CSS. Native UI проверяется отдельно.
 
-Для ручной проверки закрыть dev-сервер, открыть `target/release/io-desktop.exe`, перейти в «О приложении»: ожидаются «Настольное приложение», платформа `windows` и «Ответ получен». Затем проверить выбор клавиши и раздел LED-панели. Фактический статус этого smoke test записывается в [STATUS](STATUS.md); сам список действий не означает, что он выполнен.
+Аппаратные исследовательские examples `verify_lighting` и `verify_configuration` исполняются только с явным `--run`. Они временно меняют конкретные блоки, сохраняют резервные снимки в игнорируемый архив и восстанавливают исходное. Не включать их в CI. При ошибке восстановления остановиться и использовать сохранённый снимок; не повторять SET вслепую.
 
-## Сборка ресурсов
+Release EXE содержит frontend. Изменение Vue требует повторного `desktop:build`. Обычный `cargo build -p io-desktop` не заменяет упаковку Tauri. `desktop:dev` использует Vite на 1420; `npm run dev` даёт browser preview без native HID. Python нужен только для `tools/`.
 
-Скрипты `desktop:build` и `desktop:bundle` явно включают Cargo feature `custom-protocol`, передаваемую Tauri. Режим `desktop:dev` использует Vite на localhost:1420. Обычный `cargo build -p io-desktop` не является командой упаковки автономного приложения. Проверяйте именно EXE из последней сборки Tauri: debug-файлы могут пересобираться другими Cargo-командами.
+## Ручные сценарии
 
-При изменении UI повторная native-сборка обязательна: готовый EXE содержит прежние ресурсы, пока не пересобран. Первый native build требует C++ toolchain и WebView2. Проверены VS 2022 Build Tools и WebView2 150.0.4078.65; это сведения об окружении, не минимальные версии.
+Подключить IO и проверить 1.17 → выбрать A/WASD → подготовить черновик → отменить/вернуть группу. В свете создать градиент, проверить заданные цвета и отсутствие выдуманного текущего RGB. Сохранить/экспортировать профиль; импортировать повреждённый JSON и убедиться, что рабочий снимок остаётся. Для apply подготовить конкретный diff, проверить GET, затем recovery.
 
-Pinia, router, HID, runtime правил, хранилище и плагины добавляются при появлении соответствующих сценариев. Сейчас один Vue shell и локальное состояние не требуют этих зависимостей.
+Live-тесты выполнять физическими нажатиями, а не инъекцией клавиатуры через ОС: последняя не проверяет магнитный датчик. Не выдавать произвольные два входящих адреса за доказательство всей раскладки.
+
+Геометрия взята со скриншота владельца и связана с [картой слотов](evidence/layout-reference.json). Условный значок панели не утверждает её топологию. При ширине окна до 1350 px инспектор размещается ниже клавиатуры, чтобы не уменьшать подписи до нечитаемого размера. Диалоги удерживают фокус, поддерживается клавиатурный выбор и reduced motion.

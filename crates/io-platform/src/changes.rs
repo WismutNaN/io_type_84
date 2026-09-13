@@ -68,6 +68,7 @@ fn validate_binding(value: &BindingRecord, slots: &[u8]) -> Result<()> {
                     .iter()
                     .any(|&(slot, key)| slot == slots[1] && key == c)
         }
+        13 => a == 0 && b == 0 && [11, 12, 13, 14, 15, 16, 17, 22, 27, 87, 91].contains(&c),
         _ => false,
     };
     if !valid {

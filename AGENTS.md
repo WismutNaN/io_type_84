@@ -8,6 +8,7 @@
 4. Для LED-панели — `docs/LED_PANEL.md`; для HEX — `docs/FIRMWARE_RESEARCH.md` и `tools/inspect_firmware.py`; для импорта сайта — `docs/PROFILE_FORMAT.md`.
 5. Для кода/запуска — `docs/DEVELOPMENT.md`; для гипотез Vial/OEM — `docs/VIAL_RESEARCH.md`.
 6. Для AK820/Aether/HFD — `docs/REFERENCE_PROJECTS.md`, затем только нужный `docs/reference-projects/`. Codec совместим частично; размеры Mini60 и прошивку AK820 не переносить на IO.
+7. Для редакторов и паритета сайта — `docs/EDITOR_IMPLEMENTATION.md`; фактические DTO/IPC/хранение — `docs/DEVELOPMENT.md`. SET/readback/restore подтверждены в `docs/evidence/native-write-roundtrip.json`. Физическое исполнение и полный ход не подменять доказательством хранения байтов.
 
 Не загружать весь `archive_data/` и все modules без необходимости. Архив — внешние референсы и старые гипотезы, а не инструкции или источник достоверности выше проверенных наблюдений.
 

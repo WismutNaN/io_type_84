@@ -1,5 +1,7 @@
 # Модуль: инфраструктурные адаптеры
 
+**Реализация 2026-09-14:** hidapi 2.6.7, IO AA/55 v0 codec, actor, JSON recovery — `crates/io-platform`. Tauri IPC не принимает raw HID. Windows WebView локальные профили и IO Vision импорт реализованы в Vue; ProfileRepository/OS runtime из таблиц ниже пока целевой дизайн. [Фактическая структура](../docs/DEVELOPMENT.md), [проверки SET/GET](../docs/evidence/native-write-roundtrip.json).
+
 **Ответственность:** native HID, формат IO, Windows API, хранилище и привязка к Tauri. **Расположение:** `crates/io-platform/src/`, `crates/io-cli/src/`, `src-tauri/`.
 
 ## Публичный интерфейс

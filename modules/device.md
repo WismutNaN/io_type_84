@@ -1,5 +1,7 @@
 # Модуль: устройство
 
+**Реализация 2026-09-14:** NativeDevice/KeyboardService в `crates/io-platform`; exact descriptor/identity White 1.17, GET snapshot, подготовленные SET, FB-monitor, bounded queue/watchdog. Типы ниже описывают целевые границы; фактический API — [DEVELOPMENT](../docs/DEVELOPMENT.md).
+
 **Ответственность:** идентификация устройства, физическая раскладка и доказанные возможности. **Расположение:** `crates/io-core/src/device/`.
 
 ## Контекст
