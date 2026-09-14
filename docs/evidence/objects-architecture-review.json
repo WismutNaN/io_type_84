@@ -1,0 +1,325 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-14",
+  "method": "Full source-document reading, existing codec/runtime review, primary-document verification; no device access",
+  "architectureStatus": "proposed",
+  "source": {
+    "path": "archive_data/objects.md",
+    "bytes": 45989,
+    "sha256": "e10baa9b9fec642eaa2b1926ee2a1a477bdf674bc044cddb3dfca4b04933c5e1",
+    "lines": 1563
+  },
+  "userClarification": {
+    "complexInputMayRunOnHost": true,
+    "requiresReliableBehavior": true,
+    "fullAutonomousExecutionRequired": false,
+    "meaning": "Confirmed by owner in this conversation; does not prove technical readiness"
+  },
+  "sourceSections": [
+    {
+      "id": "O01",
+      "section": 1,
+      "title": "Какие сущности действительно нужны"
+    },
+    {
+      "id": "O02",
+      "section": 2,
+      "title": "Control: я бы отделил физическую клавишу от логической функции"
+    },
+    {
+      "id": "O03",
+      "section": 3,
+      "title": "Signal — магнитная клавиатура даёт не событие, а сигнал"
+    },
+    {
+      "id": "O04",
+      "section": 4,
+      "title": "Trigger лучше назвать Interaction / Recognizer"
+    },
+    {
+      "id": "O05",
+      "section": 5,
+      "title": "У Trigger должны быть фазы"
+    },
+    {
+      "id": "O06",
+      "section": 6,
+      "title": "Основные типы Trigger / Recognizer"
+    },
+    {
+      "id": "O07",
+      "section": 7,
+      "title": "В Trigger обязательно должна входить направленность"
+    },
+    {
+      "id": "O08",
+      "section": 8,
+      "title": "Condition — отдельная сущность, не Trigger"
+    },
+    {
+      "id": "O09",
+      "section": 9,
+      "title": "Condition должен собираться из блоков AND / OR / NOT"
+    },
+    {
+      "id": "O10",
+      "section": 10,
+      "title": "State / Variable — обязательная сущность"
+    },
+    {
+      "id": "O11",
+      "section": 11,
+      "title": "Rule — вот это фактически основной пользовательский объект"
+    },
+    {
+      "id": "O12",
+      "section": 12,
+      "title": "Policies — небольшая сущность, но критически важная"
+    },
+    {
+      "id": "O13",
+      "section": 13,
+      "title": "Actions должны быть атомарными"
+    },
+    {
+      "id": "O14",
+      "section": 14,
+      "title": "Flow — контейнер для вложенных действий"
+    },
+    {
+      "id": "O15",
+      "section": 15,
+      "title": "Нужна сущность Runtime Action / Lease"
+    },
+    {
+      "id": "O16",
+      "section": 16,
+      "title": "Lifetime можно сделать понятным пользовательским свойством"
+    },
+    {
+      "id": "O17",
+      "section": 17,
+      "title": "Tap/Hold — это не два независимых Trigger"
+    },
+    {
+      "id": "O18",
+      "section": 18,
+      "title": "Pending — важное состояние"
+    },
+    {
+      "id": "O19",
+      "section": 19,
+      "title": "Combo, Sequence и Chord — тоже recognizer'ы"
+    },
+    {
+      "id": "O20",
+      "section": 20,
+      "title": "Sequence — отдельный тип"
+    },
+    {
+      "id": "O21",
+      "section": 21,
+      "title": "One Shot — уже State Machine"
+    },
+    {
+      "id": "O22",
+      "section": 22,
+      "title": "SOCD / Rappy Snappy вообще не стоит представлять Trigger → Action"
+    },
+    {
+      "id": "O23",
+      "section": 23,
+      "title": "Resolver пригодится не только для SOCD"
+    },
+    {
+      "id": "O24",
+      "section": 24,
+      "title": "Profile, Layer, Scope и Context нельзя объединять"
+    },
+    {
+      "id": "O25",
+      "section": 25,
+      "title": "Нужен reusable Behavior / Automation"
+    },
+    {
+      "id": "O26",
+      "section": 26,
+      "title": "Stream Deck даёт ещё одну важную сущность: Action Type против Action Instance"
+    },
+    {
+      "id": "O27",
+      "section": 27,
+      "title": "И неожиданно новый Stream Deck 7 подтверждает нашу модель"
+    },
+    {
+      "id": "O28",
+      "section": 28,
+      "title": "Как существующие «функции» раскладываются на наши сущности"
+    },
+    {
+      "id": "O29",
+      "section": 29,
+      "title": "Как я бы оформил самое важное место GUI"
+    },
+    {
+      "id": "O30",
+      "section": 30,
+      "title": "А сложные пресеты просто генерируют такие правила"
+    },
+    {
+      "id": "O31",
+      "section": 31,
+      "title": "Advanced mode показывает правду"
+    },
+    {
+      "id": "O32",
+      "section": 32,
+      "title": "Отдельно нужен Debugger"
+    },
+    {
+      "id": "O33",
+      "section": 33,
+      "title": "Что я бы сознательно НЕ делал"
+    }
+  ],
+  "modelObjects": [
+    {
+      "id": "M01",
+      "name": "DeviceDescriptor / DeviceSession"
+    },
+    {
+      "id": "M02",
+      "name": "ControlDefinition"
+    },
+    {
+      "id": "M03",
+      "name": "SignalSample / InputEvent"
+    },
+    {
+      "id": "M04",
+      "name": "ProcessorSpec"
+    },
+    {
+      "id": "M05",
+      "name": "InteractionSpec / RecognizerInstance"
+    },
+    {
+      "id": "M06",
+      "name": "ConditionExpr"
+    },
+    {
+      "id": "M07",
+      "name": "StateDefinition / StateStore"
+    },
+    {
+      "id": "M08",
+      "name": "RuleDefinition"
+    },
+    {
+      "id": "M09",
+      "name": "ActionType"
+    },
+    {
+      "id": "M10",
+      "name": "ActionPreset"
+    },
+    {
+      "id": "M11",
+      "name": "ActionCall"
+    },
+    {
+      "id": "M12",
+      "name": "FlowDefinition"
+    },
+    {
+      "id": "M13",
+      "name": "BehaviorTemplate"
+    },
+    {
+      "id": "M14",
+      "name": "TargetRef / LightingSurface"
+    },
+    {
+      "id": "M15",
+      "name": "LayerDefinition"
+    },
+    {
+      "id": "M16",
+      "name": "WorkspaceProfile"
+    },
+    {
+      "id": "M17",
+      "name": "ScopeSpec"
+    },
+    {
+      "id": "M18",
+      "name": "ContextSnapshot"
+    },
+    {
+      "id": "M19",
+      "name": "InputArbitrationGroup"
+    },
+    {
+      "id": "M20",
+      "name": "OutputCompositionPolicy"
+    },
+    {
+      "id": "M21",
+      "name": "ExecutionInstance"
+    },
+    {
+      "id": "M22",
+      "name": "OutputLease"
+    },
+    {
+      "id": "M23",
+      "name": "Lifetime / ExecutionPolicy"
+    },
+    {
+      "id": "M24",
+      "name": "TraceEvent"
+    },
+    {
+      "id": "M25",
+      "name": "DeploymentPlan / CapabilityEvidence"
+    }
+  ],
+  "sourceSectionsReviewed": 33,
+  "stockFullGraph": "not_expressible_through_known_protocol",
+  "stockPlusHostFullBehavior": "not_yet_proven",
+  "hardwareAccess": false,
+  "firmwarePatched": false,
+  "runtimeChanged": false,
+  "compatibilityGates": [
+    "G1: input ownership",
+    "G2: output ownership",
+    "G3: analog quality",
+    "G4: key RGB streaming",
+    "G5: panel output",
+    "G6: stock behavior and persistence"
+  ],
+  "existingEvidence": [
+    "docs/evidence/native-write-roundtrip.json",
+    "docs/evidence/native-rust-initial.json",
+    "docs/evidence/chip-feasibility.json"
+  ],
+  "codeReviewed": [
+    "crates/io-core/src/keyboard.rs",
+    "crates/io-core/src/automation.rs",
+    "crates/io-platform/src/changes.rs",
+    "crates/io-platform/src/service.rs",
+    "crates/io-platform/src/action_runtime.rs",
+    "src/features/editor/DksEditor.vue"
+  ],
+  "primarySourcesReviewed": [
+    "https://docs.unity3d.com/Packages/com.unity.inputsystem@1.14/manual/Interactions.html",
+    "https://help.wooting.io/article/99-how-to-use-dks",
+    "https://docs.qmk.fm/tap_hold",
+    "https://www.home-assistant.io/docs/scripts/",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput",
+    "https://github.com/jtroo/kanata/releases",
+    "https://github.com/jtroo/kanata/blob/main/cfg_samples/kanata.kbd"
+  ],
+  "implementationTestsRun": false,
+  "note": "Planning examples are expected contracts, not executed compiler or hardware tests. No external backend was installed. Source claims about third-party products do not establish IO capabilities."
+}

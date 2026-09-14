@@ -30,6 +30,29 @@ C не является предварительным условием выпу
 минимального маршрута на stock и приёмка результата в ОС. Фон можно дорабатывать
 независимо; расширение каталога и ожидание новой firmware не закрывают этот сценарий.
 
+### Проверка архитектуры objects.md перед реализацией
+
+Владелец допускает сложные жесты/слои в helper, если поведение надёжное. Полный
+граф не представим в известных stock-таблицах; это не требует сужения авторской
+модели, но требует проверки input/output contract. [Модель](OBJECT_MODEL.md),
+[ADR-0009 — предложено](adr/0009-behavior-model-and-execution.md).
+
+- [ ] **M0 / до расширения 11A:** G1 exclusive PgUp/PgDn, G2 два владельца Shift +
+  физический ввод, отказ/stop; выбрать stock-маркер или проверяемый готовый backend.
+  При неприемлемом результате — оценка узкого C bridge → [gates](objects/COMPATIBILITY.md),
+  [миграция](../modules/execution-plan.md).
+- [ ] **M1–M2 / 11A:** definitions/runtime, planner с отказом потери семантики,
+  один полный ExclusiveDepth и UI; сохранить v2/additive-правила → [execution-plan](../modules/execution-plan.md),
+  [automation](../modules/automation.md#exclusive-depth).
+- [ ] **M3 / 10–11:** общий runtime, repository/lifecycle, цифровые слои/Flow —
+  [companion](../modules/companion.md). Работа над lifecycle не зависит от света.
+- [ ] **M4 / 12–14:** analog/targets/providers по отдельным gates; C только при
+  доказанном контракте → [firmware contract](objects/FIRMWARE_CONTRACT.md).
+
+Это уточнение последовательности существующих фаз, не новая реализация и не
+обещание полного stock-пути. Перед C по-прежнему требуются recovery и отдельная
+разрешённая аппаратная сессия; полный firmware runtime не является предпосылкой M1.
+
 <a id="phase-1"></a>
 
 ## Фаза 1 — компилируемый скелет

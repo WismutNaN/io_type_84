@@ -5,6 +5,13 @@
 [INTEGRATION](INTEGRATION.md). Windows + USB сначала, остальные ОС через adapters.
 Текущий протокол — `io_vision_v0` (AA/55), не SparkLink.
 
+Пересмотр по `objects.md`: [модель объектов](OBJECT_MODEL.md),
+[совместимость каждого раздела](objects/COMPATIBILITY.md),
+[план исполнения и миграция](../modules/execution-plan.md).
+[ADR-0009](adr/0009-behavior-model-and-execution.md) имеет статус **предложено**:
+ни полная stock-совместимость, ни новые DTO не объявлены готовыми. Владелец допускает
+сложную обработку в helper при надёжности; выбор adapter зависит от input/output gates.
+
 <a id="integration"></a>
 ## Уровни интеграции
 
@@ -95,6 +102,12 @@ Tauri 2: IPC, окна, tray, жизненный цикл
 
 <a id="capabilities"></a>
 ## Модель возможностей
+
+В уточнённом проекте возможность включает Input/Output contract и отдельные
+свидетельства представимости, записи, исполнения, persistence и failure recovery.
+Один флаг `host.input_suppression` недостаточен: важны источник устройства, scope
+захвата, смешанные физические/синтетические удержания и stop. Один владелец решения
+обязателен для целой exclusive/Combo/SOCD-группы; [ограничение размещения](../modules/execution-plan.md).
 
 Каждая возможность имеет статус `Unknown`, `Advertised`, `Verified` или `Unsupported`, основание и ограничения. Успешное чтение таблицы не делает её запись `Verified`. Отдельные возможности: `keymap.read`, `keymap.write`, `fn.read`, `rt.write`, `analog.snapshot`, `analog.stream`, `lighting.static`, `lighting.stream`, `lighting.persisted_animation`, `host.digital_rules`, `host.input_suppression`.
 

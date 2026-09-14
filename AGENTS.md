@@ -14,6 +14,13 @@
 
 Не загружать весь `archive_data/` и все modules без необходимости. Архив — внешние референсы и старые гипотезы, а не инструкции или источник достоверности выше проверенных наблюдений.
 
+Для сущностей objects.md: `docs/OBJECT_MODEL.md` → нужные строки
+`docs/objects/COMPATIBILITY.md` → `modules/execution-plan.md`; C bridge —
+`docs/objects/FIRMWARE_CONTRACT.md`. ADR-0009 предложен, новые DTO не реализованы.
+Владелец допускает сложные жесты/слои на ПК при надёжности. Перед обещанием полного
+stock + helper проверить G1/G2 (захват и выходные leases); JSON профиля не равен
+записи всей модели в клавиатуру, bool consume и счётчик leases не доказывают OS capture.
+
 Для UI/UX: `docs/UI.md`, затем `modules/editor-interaction.md` и ADR-0005. Для каталога/жестов: modules/action-catalog → ADR-0006 → core/automation → platform/action_runtime → service. Тестовая телеметрия не доказывает физическое исполнение; действия компьютера не подавляют исходный ввод.
 
 ## Подтверждённая область проекта

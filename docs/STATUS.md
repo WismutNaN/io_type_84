@@ -1,10 +1,18 @@
 # Текущее состояние
 
-Обновлено: 2026-09-14. Начать с [матрицы функций и следующей работы](FEATURE_MATRIX.md), затем читать
+Обновлено: 2026-09-14. Для архитектуры начать с [модели объектов](OBJECT_MODEL.md),
+для функций — с [матрицы](FEATURE_MATRIX.md), затем читать
 только нужный модуль/фазу. [Решения](DECISIONS.md), [история](WORKLOG.md),
 [фактический код и запуск](DEVELOPMENT.md).
 
 ## Приоритет продукта
+
+После `objects.md` владелец разрешил сложные жесты/слои/обработку в helper при
+надёжном поведении. Подготовлены 25 групп объектов и покрытие 33 разделов.
+[ADR-0009](adr/0009-behavior-model-and-execution.md) — **предложение**, stock + B
+для всего графа пока не доказан. Перед расширением модели в production —
+G1/G2: владение исходным вводом и выходами; G3/G4/G5 отдельно для analog/света.
+[Совместимость](objects/COMPATIBILITY.md), [M0–M4](../modules/execution-plan.md).
 
 1. **A — штатная настройка:** максимально раскрыть доступные параметры и макросы,
    принять физическое исполнение/сохранение. Перепрошивка и фон не требуются.
@@ -99,6 +107,7 @@ M4/FPU до 192 МГц, 160 КиБ RAM; точный MCU/PCB и частоты I
 
 | Задача | Минимальный контекст |
 |---|---|
+| Сущности objects.md / решение stock или bridge | [OBJECT_MODEL](OBJECT_MODEL.md) → [COMPATIBILITY](objects/COMPATIBILITY.md) → [execution-plan](../modules/execution-plan.md) |
 | A: приёмка/полнота настройки | [Фазы 2–9](PLAN.md#phase-2) → [покрытие](EDITOR_IMPLEMENTATION.md) → [configuration](../modules/configuration.md) → нужный протокол |
 | B: самостоятельный фон | [Фаза 10A](PLAN.md#phase-10) → [companion](../modules/companion.md) → [action-catalog](../modules/action-catalog.md) |
 | A→B: действие по штатному событию | [Кандидат и приёмка](../modules/companion.md#stock-trigger) → [семантика PgUp](FEATURE_MATRIX.md) |

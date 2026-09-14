@@ -4,6 +4,11 @@
 намерений действий. **Реализация:** `crates/io-core/src/automation.rs`; полный
 RuleSet/InputEvent ниже — проект расширения, не существующие типы.
 
+После `objects.md` полная целевая модель — [OBJECT_MODEL](../docs/OBJECT_MODEL.md):
+Processor, Recognizer, Condition, State, Flow, arbiters и leases разделены.
+Размещение проверяет [execution-plan](execution-plan.md); автономный stock не умеет
+принимать весь граф. Детальные контракты ниже остаются проектом до ADR-0009/приёмки.
+
 ## Контекст
 
 Это уровень B, работающий при запущенном runtime на штатной firmware. Есть

@@ -2,6 +2,12 @@
 
 Актуально: 2026-09-14. Решение и расширения: [ADR-0006](../docs/adr/0006-actions-gestures-scenes.md).
 
+Следующая модель по objects.md разделяет ActionType, настроенный ActionPreset,
+ActionCall, FlowDefinition и ExecutionInstance/Lease — [OBJECT_MODEL](../docs/OBJECT_MODEL.md).
+Это проект: текущий `ActionDefinition::Macro` и profile v2 ещё не изменены.
+Сохранение ID/семантики старых действий и перенос macro в Flow —
+[миграция](execution-plan.md); долговременное владение выходами требует gate G2.
+
 ## Входные файлы
 
 - `io-core/src/automation.rs`: ActionDefinition, PlatformCommands, GestureRule, AutomationProfile; валидация, GestureEngine.

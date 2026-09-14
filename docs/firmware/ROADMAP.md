@@ -5,6 +5,11 @@
 firmware. Здесь готовится расширение для конкретных ограничений железа и автономной
 логики. Прошивать пользовательскую клавиатуру не разрешено; готовность C не блокирует A/B.
 
+По objects.md дополнительно оценивается [input/output bridge](../objects/FIRMWARE_CONTRACT.md),
+если stock + OS adapter не обеспечат захват/выходные leases. Это не часть готового
+API полосы и не повод переносить весь host engine в MCU. Сначала
+[gates G1/G2](../objects/COMPATIBILITY.md), затем конкретный offline port/recovery.
+
 Оценка новых сценариев: [MCU и реализуемость](chip-feasibility.md),
 [hardware/software cases](case-coverage.md). Получен полный Sonix manual v1.7:
 до размещения вставки нужно учесть [CS/SM/BOOT и остановку CPU при flash](sonix-manual-safety.md).
