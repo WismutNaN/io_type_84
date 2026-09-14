@@ -25,6 +25,28 @@ HEX находится в `archive_data/firmware/2026-09-13/`.
 
 ## Что повторять
 
+### Ресурсы MCU и безопасность по полному manual
+
+Рабочий публичный PDF:
+[SN34F280 Series v1.7](https://www.sonix.com.tw/webapi/fl219527/SN34F285_V1.7_EN.pdf).
+При загрузке использовались обычные `User-Agent: Mozilla/5.0` и
+`Referer: https://www.sonix.com.tw/`; старые `/download/file?...` не заменяют PDF.
+Размер 11 079 913 байт, SHA-256
+`1ad200500f9a5c2a4a59dc3ee938809fb4519eb7204627ec4ecdc2ca5fd9e08e`.
+Архивный путь: `archive_data/firmware_research/2026-09-14/chip-assessment/`.
+
+```powershell
+pdftotext -layout archive_data/firmware_research/2026-09-14/chip-assessment/SN34F285_V1.7_EN.pdf archive_data/firmware_research/2026-09-14/chip-assessment/SN34F285_V1.7_EN.txt
+```
+
+В PDF 569 страниц; печатные номера совпадают с номерами страниц, начиная с 1.
+Таблицы 30/531/546/559/560 проверялись через `pypdfium2`: `PdfDocument(path)`,
+индекс `page - 1`, `render(scale=1.5).to_pil()`. Ресурсы дополнительно сверены
+XML-разбором PDSC `processor/memory/algorithm/device`. Расчёты в
+[chip-feasibility](chip-feasibility.md) используют явно заданные предположения;
+[JSON](../evidence/chip-feasibility.json) хранит числа/хеши и ограничения проверки.
+Это не исполнение FMC и не чтение устройства.
+
 ### Реальное преобразование HEX штатным WASM
 
 ```powershell

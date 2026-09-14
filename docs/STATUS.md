@@ -62,6 +62,22 @@ ISP payload, атлас 436 кандидатов функций, начальн�
 индивидуальной калибровки, Code Option/SM, подтверждённого recovery/downgrade.
 Клавиатуру не прошивать; сторонний OpenAula dry run также не запускать.
 
+## MCU и новые сценарии — оценка 2026-09-14
+
+Получен полный официальный manual Sonix v1.7, 569 с. Семейство SN34F280 имеет
+M4/FPU до 192 МГц, 160 КиБ RAM; точный MCU/PCB и частоты IO ещё не подтверждены.
+По manual CS1→CS0 стирает User, CS3→CS0 также Boot. BOOT зависит от BOOTPINEN;
+автоматический unlock ради backup недопустим. Статус защиты устройства неизвестен.
+
+[Возможности и ограничения](firmware/chip-feasibility.md),
+[flash/security и расхождения](firmware/sonix-manual-safety.md),
+[применимость новых cases](firmware/case-coverage.md),
+[готовый запрос IO/OEM — не отправлен](firmware/manufacturer-request.md).
+Protection/чистое подавление составных нажатий требуют обработки до HID.
+Слои/правила выглядят посильными для MCU, но бюджеты пока расчётные, analog не принят.
+Сетевые условия остаются в помощнике. Следующий шаг C — комплект производителя,
+идентификация/backup/recovery, затем узкий API; основное приложение не менялось.
+
 ## Следующая работа и маршруты
 
 | Задача | Минимальный контекст |
@@ -70,6 +86,7 @@ ISP payload, атлас 436 кандидатов функций, начальн�
 | B: самостоятельный фон | [Фаза 10A](PLAN.md#phase-10) → [companion](../modules/companion.md) → [action-catalog](../modules/action-catalog.md) |
 | Аналоговые условия | [Фаза 12](PLAN.md#phase-12) → [automation](../modules/automation.md); не блокирует цифровой фон |
 | C: API полосы | [lighting-stream](../modules/lighting-stream.md) → [контракт](firmware/panel-host-api.md) → [firmware roadmap](firmware/ROADMAP.md) |
+| C: MCU, исходники и безопасный стенд | [оценка MCU](firmware/chip-feasibility.md) → [manual/security](firmware/sonix-manual-safety.md) → [запрос IO](firmware/manufacturer-request.md) |
 
 Контрольные точки: `6886b8e` проверяемая запись; `e064e4b` каталог/жесты;
 `bec0f05` firmware output map и изолированный API. Сведения о последних сборках

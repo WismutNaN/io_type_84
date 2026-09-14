@@ -4,6 +4,16 @@
   "hardwareAccess": false,
   "sources": [
     {
+      "id": "sonix-manual-v1.7",
+      "url": "https://www.sonix.com.tw/webapi/fl219527/SN34F285_V1.7_EN.pdf",
+      "localPath": "archive_data/firmware_research/2026-09-14/chip-assessment/SN34F285_V1.7_EN.pdf",
+      "bytes": 11079913,
+      "sha256": "1ad200500f9a5c2a4a59dc3ee938809fb4519eb7204627ec4ecdc2ca5fd9e08e",
+      "documentVersion": "1.7",
+      "documentDate": "2025-05-08",
+      "pages": 569
+    },
+    {
       "id": "io-white-hex",
       "url": "https://web.io.vision/IO_Type_84_Magnetic_White_V1.17.hex",
       "localPath": "archive_data/firmware/2026-09-13/IO_Type_84_Magnetic_White_V1.17.hex",

@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-14",
+  "method": "Offline primary-document inspection and arithmetic planning scenarios",
+  "hardwareAccess": false,
+  "firmwarePatched": false,
+  "sources": [
+    {
+      "id": "sonix-manual-v1.7",
+      "url": "https://www.sonix.com.tw/webapi/fl219527/SN34F285_V1.7_EN.pdf",
+      "localPath": "archive_data/firmware_research/2026-09-14/chip-assessment/SN34F285_V1.7_EN.pdf",
+      "title": "SN34F280 Series 32-Bit Cortex-M4F Micro-Controller",
+      "version": "1.7",
+      "documentDate": "2025-05-08",
+      "pages": 569,
+      "bytes": 11079913,
+      "sha256": "1ad200500f9a5c2a4a59dc3ee938809fb4519eb7204627ec4ecdc2ca5fd9e08e"
+    },
+    {
+      "id": "sonix-dfp",
+      "url": "https://liveupdate.sonix.com.tw/sonix/develop_tool/MCU/DFP/SONiX.SN34F2_DFP.2.0.4.pack",
+      "localPath": "archive_data/firmware_research/2026-09-14/SONiX.SN34F2_DFP.2.0.4.pack",
+      "bytes": 1921869,
+      "sha256": "5b976497879b608410be3481014e6e9af68dec4392207e3e535d2e227ce40d97"
+    },
+    {
+      "id": "dfp-pdsc",
+      "localPath": "archive_data/firmware_research/2026-09-14/sonix-dfp/SONiX.SN34F2_DFP.2.0.4/SONiX.SN34F2_DFP.pdsc",
+      "bytes": 9998,
+      "sha256": "2844a8f4638aa46882d9846b61e5e34bc886ffdd9e2f259289415b152b019a22"
+    },
+    {
+      "id": "dfp-svd",
+      "localPath": "archive_data/firmware_research/2026-09-14/sonix-dfp/SONiX.SN34F2_DFP.2.0.4/SVD/SN34F280.svd",
+      "bytes": 2444099,
+      "sha256": "db1e2fb7c398b2529502bc718598c6fca296b5926898eaa5fab979c46aa1f8b2"
+    }
+  ],
+  "userCases": [
+    {
+      "localPath": "archive_data/hardware_case.md",
+      "bytes": 39142,
+      "sha256": "ada82d707d7f054f2eca3dfd9f2472fe7591937b3b0128a4f2ab4400d1195504"
+    },
+    {
+      "localPath": "archive_data/software_case.md",
+      "bytes": 29954,
+      "sha256": "99732b2be3299c054bf33c95d8d2dedfab35fd7e0b8c5f561341c409abcd80be"
+    }
+  ],
+  "identity": {
+    "family": "SN34F280",
+    "status": "High-confidence binary family match; exact physical part unconfirmed",
+    "exactPartConfirmed": false,
+    "pcbRevisionConfirmed": false,
+    "dfpDevices": ["SN34F289F", "SN34F288F", "SN34F2881F", "SN34F287F", "SN34F2871F", "SN34F285J", "SN34F2851J", "SN34F2852J"]
+  },
+  "familyResources": {
+    "cpu": "Cortex-M4 with FPU and MPU",
+    "maximumCpuHz": 192000000,
+    "sramBytes": 163840,
+    "mainMemoryBytes": 524288,
+    "userMemoryBytes": 516096,
+    "bootMemoryBytes": 8192,
+    "specificMemoryBytes": 2048,
+    "adcBits": 12,
+    "maximumExternalAdcInputs": 16,
+    "sourcePages": [29, 30, 31, 49, 190, 529],
+    "ioClockMeasured": false,
+    "ioFreeMemoryMeasured": false
+  },
+  "manualSafety": {
+    "securityPages": [537, 546, 547],
+    "cs1ToCs0": "User erased, Boot retained",
+    "cs3ToCs0": "User and Boot erased",
+    "cs3ToCs1": "Forbidden",
+    "observedIoRdp": null,
+    "observedIoBootPinEnable": null,
+    "bootPinEnableDocumentedAddress": "0x00400500",
+    "bootPinEnableBit": 2,
+    "bootPinEnableDocumentedDefault": 1,
+    "bootPinSourcePages": [66, 552],
+    "flashPageBytes": 512,
+    "flashErasePageTypicalMs": 10.6,
+    "flashProgramPageTypicalMs": 3.8,
+    "flashEraseProgramCyclesMinimum": 10000,
+    "flashEraseProgramCyclesTypical": 100000,
+    "flashTimingPages": [529, 545, 559],
+    "flashTimingCaveat": "Manual design-reference values, not IO measurements or worst-case bounds",
+    "usbIspSemanticsFullyEstablished": false
+  },
+  "readPages": [3, 29, 30, 31, 49, 66, 89, 90, 190, 191, 192, 193, 194, 529, 530, 531, 532, 533, 535, 536, 537, 540, 541, 542, 544, 545, 546, 547, 552, 553, 554, 559, 560],
+  "visuallyInspectedPages": [30, 531, 546, 559, 560],
+  "knownDiscrepancies": [
+    "SVD CHIPID read-only versus manual RPW",
+    "Page 531 MM address typo in prose",
+    "Page 532 shadow boundary typo",
+    "Page 540 CS2 mention versus main CS0/CS1/CS3 section",
+    "Page 531 customer page 2 prose versus page 3 table",
+    "Page 191 ADC clock less-than versus 16 MHz example"
+  ],
+  "budgetExamples": {
+    "isMeasured": false,
+    "physicalKeys": 84,
+    "logicalLedPositions": 94,
+    "scanHzAssumption": 8000,
+    "cpuHzAssumption": 192000000,
+    "adcOperatingPointSamplesPerSecond": 1000000,
+    "adcOperatingPointSourcePages": [192, 193, 559],
+    "adcConversionsPerSecond": 672000,
+    "adcConversionsPerSecondAt4Samples": 2688000,
+    "cpuCyclesPerScan": 24000,
+    "scanPeriodUs": 125,
+    "matrixU16BytesPerSecondAt1000Hz": 168000,
+    "panelRgbBytesPerSecondAt60Hz": 1800,
+    "allRgbBytesPerSecondAt60Hz": 16920,
+    "keyStateBytesAt32BytesPerKey": 2688,
+    "layerBytesAt32Layers128Slots4Bytes": 16384,
+    "doubleRgbBufferBytes": 564,
+    "raw64ByteReportBytesPerSecond": { "1000Reports": 64000, "8000Reports": 512000 },
+    "wireOverheadsIncluded": false
+  },
+  "notEstablished": [
+    "Exact installed MCU/package/revision",
+    "Current RDP/BOOTPINEN/Boot firmware",
+    "Full unit backup and restore",
+    "IO clock tree and CPU/ADC/USB worst-case budget",
+    "Full analog key coverage and release",
+    "Stock volatile hardware profile selector",
+    "Safe placement and ABI for firmware overlay",
+    "Hardware strip API and physical color map"
+  ],
+  "reproduce": {
+    "pdf": "Download public URL with standard User-Agent/Referer; verify PDF magic, size and SHA-256",
+    "text": "pdftotext -layout <manual.pdf> <manual.txt>; printed page numbers match 1-based PDF pages",
+    "render": "pypdfium2 PdfDocument; index = visuallyInspectedPages entry - 1; render(scale=1.5).to_pil(); save PNG",
+    "dfp": "Parse PDSC XML processor/memory/algorithm/device fields",
+    "budget": "Arithmetic examples in chip-feasibility.md; no device timing inferred"
+  }
+}
