@@ -398,7 +398,11 @@ impl RawSnapshot {
                     key_code: b[2],
                     pressed: b[3] & 0x80 != 0,
                     delay_ms: word(b, 0),
-                    kind: (b[3] >> 4) & 7,
+                    kind: match (b[3] >> 4) & 7 {
+                        3 => 1, // keyboard in domain/profile
+                        1 => 3, // mouse button in domain/profile
+                        other => other,
+                    },
                 })
                 .collect();
             macros.push(HardwareMacro {

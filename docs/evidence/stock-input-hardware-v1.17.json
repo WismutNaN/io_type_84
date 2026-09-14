@@ -1,0 +1,104 @@
+{
+  "afterRevision": "d46e65d739fcf981fcfc38c8f65b404c04256f0b378f5c168aa7ae3d83b71913",
+  "beforeRevision": "d46e65d739fcf981fcfc38c8f65b404c04256f0b378f5c168aa7ae3d83b71913",
+  "firmware": "White 1.17",
+  "hardwareAccess": true,
+  "limits": [
+    "No power-cycle persistence test",
+    "Only PgUp/PgDn and selected input routes",
+    "Initial raw-input counter did not cover the current media bindings.",
+    "Full simultaneous analog fidelity, stream loss and helper recovery not verified.",
+    "OS-mode at stock options block 0x8200 is outside the nine-block snapshot."
+  ],
+  "measurementError": null,
+  "phases": [
+    {
+      "analog": {},
+      "keys": {},
+      "phase": "baseline",
+      "seconds": 12
+    },
+    {
+      "analog": {},
+      "keys": {},
+      "phase": "stock-no-output",
+      "seconds": 12
+    },
+    {
+      "analog": {
+        "105": {
+          "minimum_um": 0,
+          "packets": 9731,
+          "peak_um": 3980,
+          "samples_after_peak": 4
+        },
+        "108": {
+          "minimum_um": 0,
+          "packets": 11003,
+          "peak_um": 3980,
+          "samples_after_peak": 2
+        }
+      },
+      "keys": {},
+      "phase": "stock-no-output-plus-analog",
+      "seconds": 24
+    },
+    {
+      "analog": {},
+      "keys": {},
+      "phase": "restored",
+      "seconds": 10
+    }
+  ],
+  "rawInputErrors": 0,
+  "restored": true,
+  "schemaVersion": 1,
+  "digitalSuppressionVerified": false,
+  "positiveControlVerified": false,
+  "analogWithNoOutputBindingObserved": true,
+  "bindingFixture": {
+    "slots": [
+      105,
+      108
+    ],
+    "before": [
+      [
+        3,
+        233,
+        0,
+        0
+      ],
+      [
+        3,
+        234,
+        0,
+        0
+      ]
+    ],
+    "during": [
+      [
+        5,
+        0,
+        0,
+        0
+      ],
+      [
+        5,
+        0,
+        0,
+        0
+      ]
+    ],
+    "block": "base",
+    "changedBytes": 4
+  },
+  "laterAttempts": "Stopped before SET because no positive digital control; owner reported unclear test timing.",
+  "osModeIncident": {
+    "nineBlocksUnchanged": true,
+    "usbReconnectResolved": false,
+    "fnMResolvedOwnerConfirmed": true,
+    "ownerReportedPossibleAccidentalFnM": true,
+    "causedByTest": "not established",
+    "osModeCoveredBySnapshot": false
+  }
+}

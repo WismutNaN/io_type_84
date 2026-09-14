@@ -101,6 +101,7 @@ pub struct MacroStep {
     pub key_code: u8,
     pub pressed: bool,
     pub delay_ms: u16,
+    // Domain/profile kind: 1 = keyboard, 3 = mouse button. Not the wire nibble.
     pub kind: u8,
 }
 

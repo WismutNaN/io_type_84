@@ -11,6 +11,7 @@ import {
   deviceActions,
   hexColor,
   keyChoices,
+  firmwareActionChoices,
   keyName,
   parseColor,
 } from './model';
@@ -133,7 +134,6 @@ function bind() {
     page = 0;
     parameters = [0, 0, 0];
   }
-  if (kind.value === 'disabled') parameters = [0, 0, 0];
   if (kind.value === 'mouse') {
     page = 1;
     parameters = [1, code.value, 0];
@@ -279,7 +279,6 @@ function advancedEdit() {
                 <option value="combo">{{ t('Сочетание клавиш') }}</option>
                 <option value="macro">{{ t('Аппаратный макрос') }}</option>
                 <option value="default">{{ t('Заводское назначение') }}</option>
-                <option value="disabled">{{ t('Отключить') }}</option>
               </select></label
             >
             <template v-if="kind === 'keyboard'"
@@ -453,12 +452,16 @@ function advancedEdit() {
           ><label v-if="advanced === 'mt'"
             >{{ t('Удержание')
             }}<select v-model.number="holdCode">
-              <option v-for="k in keyChoices" :key="k.code" :value="k.code">{{ k.label }}</option>
+              <option v-for="k in firmwareActionChoices" :key="k.code" :value="k.code">
+                {{ k.label }}
+              </option>
             </select></label
           ><label
             >{{ t(String(advanced === 'mt' ? 'Касание' : 'Действие'))
             }}<select v-model.number="tapCode">
-              <option v-for="k in keyChoices" :key="k.code" :value="k.code">{{ k.label }}</option>
+              <option v-for="k in firmwareActionChoices" :key="k.code" :value="k.code">
+                {{ k.label }}
+              </option>
             </select></label
           ><label v-if="advanced === 'mt'"
             >{{ t('Граница удержания ·') }}{{ delay }}{{ t('мс')

@@ -158,3 +158,17 @@ callbacks могли выглядеть как отсутствующие caller
 восстановленное начальное состояние, не дамп рабочего устройства. В первоначальный
 Ghidra-проект оно автоматически не импортируется; границы `0x2D0/0x2F4` в старом
 псевдокоде также нужно разделять по ассемблеру.
+
+## Штатные назначения, DKS, MT и макросы
+
+```powershell
+$env:PYTHONPATH = 'archive_data/analysis_runtime'
+python tools/verify_stock_input.py archive_data/firmware/2026-09-13/IO_Type_84_Magnetic_White_V1.17.hex --output docs/evidence/stock-input-emulation-v1.17.json
+```
+
+Зависимости закреплены в `tools/requirements-research.txt`. Стенд исполняет
+оригинальные ARM-функции, перебирает 81 комбинацию фаз одного действия DKS,
+проверяет macro wire kind, MT и OS-mode; устройство не открывает.
+Метод и ограничения — [stock-input-v1.17](stock-input-v1.17.md).
+Аппаратный `verify_input_ownership --run` не входит в offline-воспроизведение:
+он требует интерактивного терминала и ручных границ фаз; приёмка ещё не завершена.

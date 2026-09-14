@@ -1,0 +1,759 @@
+{
+  "schemaVersion": 1,
+  "firmwareSha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "hardwareAccess": false,
+  "method": "isolated-original-ARM-input-emulation",
+  "bindings": [
+    {
+      "name": "default",
+      "bytes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": false
+        }
+      ],
+      "consumerDown": "00 00 00",
+      "consumerUp": "00 00 00"
+    },
+    {
+      "name": "keyboardZero",
+      "bytes": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "events": [
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": false
+        }
+      ],
+      "consumerDown": "00 00 00",
+      "consumerUp": "00 00 00"
+    },
+    {
+      "name": "emptyExtraFunction",
+      "bytes": [
+        5,
+        0,
+        0,
+        0
+      ],
+      "events": [],
+      "consumerDown": "00 00 00",
+      "consumerUp": "00 00 00"
+    },
+    {
+      "name": "f13",
+      "bytes": [
+        2,
+        0,
+        104,
+        0
+      ],
+      "events": [
+        {
+          "code": 104,
+          "pressed": true
+        },
+        {
+          "code": 104,
+          "pressed": false
+        }
+      ],
+      "consumerDown": "00 00 00",
+      "consumerUp": "00 00 00"
+    },
+    {
+      "name": "volumeAlias",
+      "bytes": [
+        2,
+        0,
+        185,
+        0
+      ],
+      "events": [
+        {
+          "code": 185,
+          "pressed": true
+        },
+        {
+          "code": 185,
+          "pressed": false
+        }
+      ],
+      "consumerDown": "03 e9 00",
+      "consumerUp": "03 00 00"
+    }
+  ],
+  "dks": [
+    {
+      "cycle": "shallow",
+      "states": [
+        1,
+        2,
+        0,
+        0
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            },
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        }
+      ],
+      "instructions": 1047
+    },
+    {
+      "cycle": "deep",
+      "states": [
+        1,
+        2,
+        0,
+        0
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            },
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [
+            {
+              "code": 185,
+              "pressed": true
+            },
+            {
+              "code": 185,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 e9 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 250,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        }
+      ],
+      "instructions": 1561
+    },
+    {
+      "cycle": "shallow",
+      "states": [
+        0,
+        2,
+        0,
+        1
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            },
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        }
+      ],
+      "instructions": 1045
+    },
+    {
+      "cycle": "deep",
+      "states": [
+        0,
+        2,
+        0,
+        1
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [
+            {
+              "code": 185,
+              "pressed": true
+            },
+            {
+              "code": 185,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 e9 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 250,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            },
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        }
+      ],
+      "instructions": 1559
+    },
+    {
+      "cycle": "shallow",
+      "states": [
+        16,
+        2,
+        0,
+        0
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        }
+      ],
+      "instructions": 1021
+    },
+    {
+      "cycle": "deep",
+      "states": [
+        16,
+        2,
+        0,
+        0
+      ],
+      "trace": [
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 170,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": true
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "00 00 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": false
+            },
+            {
+              "code": 185,
+              "pressed": true
+            },
+            {
+              "code": 185,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 e9 00"
+        },
+        {
+          "depthUnits10um": 310,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 250,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [
+            {
+              "code": 75,
+              "pressed": false
+            }
+          ],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        },
+        {
+          "depthUnits10um": 0,
+          "emissionRequests": [],
+          "modifierMaskBeforeDrain": 0,
+          "consumerBeforeDrain": "03 00 00"
+        }
+      ],
+      "instructions": 1588
+    }
+  ],
+  "limits": [
+    "Configuration fixtures in emulated ROM/RAM; no firmware file generated.",
+    "Emission requests and report buffers, not captured USB packets.",
+    "ADC, USB transfer, real timing and power-cycle persistence not emulated.",
+    "USB completion is modeled by clearing dirty flags before stock release queues.",
+    "Only the specified input paths and fixtures are covered."
+  ],
+  "dksExclusiveSearch": {
+    "configurations": 81,
+    "phaseChoices": [
+      "off",
+      "tap",
+      "hold"
+    ],
+    "thresholds": [
+      16,
+      30,
+      29,
+      16
+    ],
+    "shallowOnlyPgUpMatches": [],
+    "scope": "One output action, all 3^4 valid phase states, two specified cycles; not all thresholds."
+  },
+  "dksModifier": {
+    "states": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "trace": [
+      {
+        "depthUnits10um": 0,
+        "emissionRequests": [],
+        "modifierMaskBeforeDrain": 0,
+        "consumerBeforeDrain": "00 00 00"
+      },
+      {
+        "depthUnits10um": 170,
+        "emissionRequests": [
+          {
+            "code": 75,
+            "pressed": true
+          },
+          {
+            "code": 75,
+            "pressed": false
+          }
+        ],
+        "modifierMaskBeforeDrain": 2,
+        "consumerBeforeDrain": "00 00 00"
+      },
+      {
+        "depthUnits10um": 170,
+        "emissionRequests": [],
+        "modifierMaskBeforeDrain": 0,
+        "consumerBeforeDrain": "00 00 00"
+      },
+      {
+        "depthUnits10um": 0,
+        "emissionRequests": [],
+        "modifierMaskBeforeDrain": 0,
+        "consumerBeforeDrain": "00 00 00"
+      },
+      {
+        "depthUnits10um": 0,
+        "emissionRequests": [],
+        "modifierMaskBeforeDrain": 0,
+        "consumerBeforeDrain": "00 00 00"
+      }
+    ],
+    "instructions": 1060
+  },
+  "modTap": [
+    {
+      "timerTicksBeforeRelease": 10,
+      "emissionRequests": [
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "timerTicksBeforeRelease": 200,
+      "emissionRequests": [
+        {
+          "code": 185,
+          "pressed": true
+        },
+        {
+          "code": 185,
+          "pressed": false
+        },
+        {
+          "code": 185,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "timerTicksBeforeRelease": 250,
+      "emissionRequests": [
+        {
+          "code": 185,
+          "pressed": true
+        },
+        {
+          "code": 185,
+          "pressed": false
+        },
+        {
+          "code": 185,
+          "pressed": false
+        }
+      ]
+    }
+  ],
+  "macroKinds": [
+    {
+      "wireKind": 1,
+      "emissionRequests": [],
+      "mouseButtons": [
+        4,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "wireKind": 3,
+      "emissionRequests": [
+        {
+          "code": 4,
+          "pressed": true
+        },
+        {
+          "code": 4,
+          "pressed": false
+        }
+      ],
+      "mouseButtons": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "simulation": [
+    {
+      "command": 102,
+      "simulationFlag": 1,
+      "emissionRequests": [
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "command": 103,
+      "simulationFlag": 0,
+      "emissionRequests": [
+        {
+          "code": 75,
+          "pressed": true
+        },
+        {
+          "code": 75,
+          "pressed": false
+        }
+      ]
+    }
+  ],
+  "osMode": [
+    {
+      "mode": 0,
+      "slot": 81,
+      "bindingCode": 227,
+      "emissionRequests": [
+        {
+          "code": 227,
+          "pressed": true
+        },
+        {
+          "code": 227,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "mode": 0,
+      "slot": 82,
+      "bindingCode": 226,
+      "emissionRequests": [
+        {
+          "code": 226,
+          "pressed": true
+        },
+        {
+          "code": 226,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "mode": 1,
+      "slot": 81,
+      "bindingCode": 227,
+      "emissionRequests": [
+        {
+          "code": 226,
+          "pressed": true
+        },
+        {
+          "code": 226,
+          "pressed": false
+        }
+      ]
+    },
+    {
+      "mode": 1,
+      "slot": 82,
+      "bindingCode": 226,
+      "emissionRequests": [
+        {
+          "code": 227,
+          "pressed": true
+        },
+        {
+          "code": 227,
+          "pressed": false
+        }
+      ]
+    }
+  ],
+  "mediaAliases": [
+    {
+      "internalCode": 176,
+      "consumerUsage": 181
+    },
+    {
+      "internalCode": 177,
+      "consumerUsage": 182
+    },
+    {
+      "internalCode": 179,
+      "consumerUsage": 205
+    },
+    {
+      "internalCode": 181,
+      "consumerUsage": 226
+    },
+    {
+      "internalCode": 185,
+      "consumerUsage": 233
+    },
+    {
+      "internalCode": 186,
+      "consumerUsage": 234
+    }
+  ],
+  "checksPassed": true
+}

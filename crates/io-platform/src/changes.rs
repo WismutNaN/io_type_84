@@ -121,7 +121,13 @@ fn macro_bytes(values: &[HardwareMacro]) -> Result<Vec<u8>> {
         bytes.extend([0, 0]);
         for s in &value.steps {
             bytes.extend(s.delay_ms.to_le_bytes());
-            bytes.extend([s.key_code, (s.kind << 4) | if s.pressed { 0x80 } else { 0 }]);
+            // White 1.17 0x3310: wire 3 dispatches keys, wire 1 mouse buttons.
+            // Keep existing profile/domain kinds stable at this adapter boundary.
+            let wire_kind = if s.kind == 1 { 3 } else { 1 };
+            bytes.extend([
+                s.key_code,
+                (wire_kind << 4) | if s.pressed { 0x80 } else { 0 },
+            ]);
         }
     }
     if bytes.len() > 512 {
@@ -314,11 +320,13 @@ pub fn prepare(before: &RawSnapshot, request: ChangeRequest) -> Result<PreparedC
                     || value.thresholds[0] > value.thresholds[1]
                     || value.thresholds[2] < value.thresholds[3]
                     || value.states.iter().any(|s| s & 15 & (s >> 4) != 0)
-                    || value
-                        .actions
-                        .iter()
-                        .zip(value.states)
-                        .any(|(a, s)| *a == 0 && s != 0)
+                    || value.actions.iter().enumerate().any(|(action, code)| {
+                        *code == 0
+                            && value
+                                .states
+                                .iter()
+                                .any(|state| state & (0x11 << action) != 0)
+                    })
                 {
                     return Err(invalid("Проверьте порядок порогов и состояния DKS."));
                 }
@@ -649,6 +657,64 @@ mod tests {
         validate_existing_macros(&raw).unwrap();
         raw.blocks.get_mut("macros").unwrap()[407] |= 1;
         assert!(validate_existing_macros(&raw).is_err());
+    }
+    #[test]
+    fn macro_wire_types_match_original_firmware_not_profile_numbers() {
+        let make = |kind| HardwareMacro {
+            id: 0,
+            steps: vec![
+                MacroStep {
+                    key_code: 4,
+                    pressed: true,
+                    delay_ms: 1,
+                    kind,
+                },
+                MacroStep {
+                    key_code: 4,
+                    pressed: false,
+                    delay_ms: 1,
+                    kind,
+                },
+            ],
+        };
+        // Original ARM 0x3310 verified in stock-input-emulation-v1.17.json.
+        let keyboard = macro_bytes(&[make(1)]).unwrap();
+        assert_eq!(
+            &keyboard[400..412],
+            &[4, 0, 0, 0, 1, 0, 4, 0xB0, 1, 0, 4, 0x30]
+        );
+        let mouse = macro_bytes(&[make(3)]).unwrap();
+        assert_eq!(
+            &mouse[400..412],
+            &[4, 0, 0, 0, 1, 0, 4, 0x90, 1, 0, 4, 0x10]
+        );
+        // Decode a firmware fixture independently of our encoder.
+        let mut raw = fixture();
+        let mut wire = vec![0; 400];
+        wire[..4].copy_from_slice(&400u32.to_le_bytes());
+        wire.extend([4, 0, 0, 0, 1, 0, 4, 0xB0, 1, 0, 4, 0x30]);
+        raw.blocks.insert("macros".into(), wire);
+        assert_eq!(raw.decode().unwrap().macros, vec![make(1)]);
+    }
+    #[test]
+    fn dks_action_validation_uses_all_phases_for_each_action() {
+        let raw = fixture();
+        let request = |actions, states| ChangeRequest {
+            base_revision: raw.revision(),
+            edits: vec![Edit::Dks {
+                value: DksConfiguration {
+                    index: 0,
+                    thresholds: [16, 30, 29, 16],
+                    actions,
+                    states,
+                },
+            }],
+        };
+        // Action 1 at final release: phase 4 does not require action 4.
+        assert!(prepare(&raw, request([75, 0, 0, 0], [0, 0, 0, 1])).is_ok());
+        // Phase 1 references missing action 2, even if action 1 is present.
+        assert!(prepare(&raw, request([75, 0, 0, 0], [2, 0, 0, 0])).is_err());
+        assert!(prepare(&raw, request([75, 185, 0, 0], [0, 2, 0, 1])).is_ok());
     }
     #[test]
     fn lighting_write_markers_are_not_expected_in_readback() {

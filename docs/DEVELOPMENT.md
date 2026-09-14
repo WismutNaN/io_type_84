@@ -72,3 +72,18 @@ Live-тесты выполнять физическими нажатиями, а
 Текущий код и границы: [каталог действий](../modules/action-catalog.md), [модуль редактора](../modules/editor-interaction.md). IPC `validate_automation(profile)` и `configure_automation(profile, enabled)` заменяют `configure_rules`. Новые DTO генерируются из `io-core/automation.rs`. `set_history_capacity(count)` ограничивает серверную историю по геометрии интерфейса.
 
 `npm run test:ui` использует Playwright и Microsoft Edge (`channel: msedge`), поднимает Vite при необходимости. Скриншоты тестового профиля сохраняются в игнорируемом archive_data. Подставной IPC только в тестах, не в production-приложении. `io.profiles.v1` теперь хранит документы schemaVersion 2 с automation; v1 читается с миграцией. Старые `io.rules.v1` преобразуются при отсутствии `io.automation.v1`. Перезапуск не включает runtime. `io.locale`/`io.theme` — предпочтения приложения.
+
+## Проверка штатного ввода
+
+[Метод и результаты](firmware/stock-input-v1.17.md). Offline-стенд:
+`tools/verify_stock_input.py`; примитивы выполняются исходным ARM-кодом.
+Аппаратный пример `cargo run -p io-platform --example verify_input_ownership`
+по умолчанию только читает и показывает diff. `--observe` / `--modifiers` читают
+Raw Input без SET; `--run` требует интерактивного терминала с ручным Enter между
+фазами, временно меняет base PgUp/PgDn, измеряет и восстанавливает snapshot.
+При ошибке измерения пытается восстановить назначения; при обрыве процесса/USB
+нужен сохранённый recovery-файл. Полного backup OS-mode/всех областей нет.
+Новая интерактивная процедура на железе ещё не пройдена. Не запускать автоматически.
+
+Доменный `MacroStep.kind`: 1 клавиатура, 3 мышь. Wire White 1.17: соответственно
+3 и 1. Это разные словари; преобразование выполняют encoder/decoder adapter.

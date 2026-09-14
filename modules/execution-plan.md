@@ -68,7 +68,7 @@ manager. Контроль только собственных leases не пре
 |---|---|---|
 | Main: A → B, фиксированный RT | Известные binding/RT поля → существующие Edit; физический тест отдельно | Helper не требуется |
 | MT: tap Esc / hold Ctrl, 180 мс, без дополнительных interrupt policies | Форма `[9,224,41,18]`; годится только после приёмки именно штатной семантики | Общий TapHold с иными политиками не сворачивать в MT |
-| Два независимых уровня DKS, keyboard usages и известные фазы | Кандидат stock-template в пределах 4 actions; сохранить raw | Произвольный macro/consumer action в byte action не помещается семантически |
+| Два независимых уровня DKS, известные фазы | Кандидат stock-template: 4 actions, маски modifiers, фиксированные media aliases; сохранить raw | Произвольный Action/Macro/Consumer ID не равен внутреннему byte alias; [ARM-проверка](../docs/firmware/stock-input-v1.17.md) |
 | Лёгкий PgUp на release / глубокий volume без PgUp | Не объявлять exact по наличию DKS-таблицы | Целый ExclusiveDepth в host, G1/G2 + принятые маркеры или G3; иначе unavailable |
 | J+K в окне времени → Esc, без J/K в приложении | CB этого не выражает: он выводит сочетание, а не распознаёт его | Chord + capture; источник наблюдения без захвата даёт `inputOwnershipMissing` |
 | Два правила удерживают Shift; физический Shift тоже удерживается | Нет общего stock lease API | Требуется output adapter с доказанным смешиванием; обычный SendInput не даёт допуска |

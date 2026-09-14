@@ -125,6 +125,11 @@ export const keyChoices: Array<{ code: number; label: string; group: string }> =
     label: `F${i + 1}`,
     group: 'Функциональные',
   })),
+  ...Array.from({ length: 12 }, (_, i) => ({
+    code: i + 104,
+    label: `F${i + 13}`,
+    group: 'Функциональные',
+  })),
   ...[
     [83, 'Num Lock'],
     [84, 'Num /'],
@@ -145,8 +150,21 @@ export const keyChoices: Array<{ code: number; label: string; group: string }> =
     [99, 'Num .'],
   ].map(([code, label]) => ({ code: Number(code), label: String(label), group: 'NumPad' })),
 ];
+// White 1.17 maps these internal one-byte aliases to Consumer Page usages.
+// DKS/MT/TGL use this vocabulary, while ordinary media bindings use page 3.
+export const firmwareActionChoices = [
+  ...keyChoices,
+  ...[
+    [0xb0, '⏭'],
+    [0xb1, '⏮'],
+    [0xb3, '⏯'],
+    [0xb5, 'Mute'],
+    [0xb9, 'Vol +'],
+    [0xba, 'Vol −'],
+  ].map(([code, label]) => ({ code: Number(code), label: String(label), group: 'Медиа' })),
+];
 export const keyName = (code: number) =>
-  keyChoices.find((k) => k.code === code)?.label ?? `Код ${code}`;
+  firmwareActionChoices.find((k) => k.code === code)?.label ?? `Код ${code}`;
 export const deviceActions = [
   { code: 11, label: 'Следующий эффект клавиш' },
   { code: 12, label: 'Следующий цвет клавиш' },
@@ -171,7 +189,7 @@ export function bindingName(binding: BindingRecord | undefined, original: string
           : 'Прокрутка ↓'
         : ({ 1: 'ЛКМ', 2: 'ПКМ', 4: 'Средняя', 8: 'Назад', 16: 'Вперёд' }[b] ?? 'Мышь');
     case 2:
-      return b === 0 ? 'Отключена' : keyName(b);
+      return b === 0 && a === 0 ? original : keyName(b);
     case 3:
       return (
         (

@@ -23,10 +23,10 @@
 
 | Проекция намерения | Штатная запись | Граница |
 |---|---|---|
-| Обычное назначение / Main-Fn | `22/26`, 128 × 4; page 0/1/2/3/7/13 | Только известные disable/mouse/keyboard/media/chord/FUNC. Не ID универсального Action |
+| Обычное назначение / Main-Fn | `22/26`, 128 × 4; page 0/1/2/3/7/13 | Default/mouse/keyboard/media/chord/FUNC. Page 0 и `[2,0,0,0]` не выключают клавишу; кандидат no-output — `[5,0,0,0]`, пока только стенд |
 | Порог и RT | `27`, 128 × 8 | Параметры stock алгоритма; не загружаемый Processor |
 | Частота/deadzone | `21`, 56 | Encoder есть, аппаратный SET 21 не принят |
-| DKS | `28`, 64 × 16 + binding `[8,index,0,0]` | 4 порога/4 байтовых keyboard actions/4 фазовых поля; не произвольный Flow |
+| DKS | `28`, 64 × 16 + binding `[8,index,0,0]` | 4 порога/4 action codes с масками modifiers/4 фазовых поля; коды включают фиксированные media aliases, не произвольный Flow |
 | MT | Binding `[9,holdKey,tapKey,timeout/10]` | 2 keyboard codes, текущий validator допускает timeout 10…1000 мс с шагом 10. Interrupt/DecisionPolicy не кодируется |
 | TGL | `[10,keyCode,0,0]` | Встроенный toggle одной клавиши, не общий StateStore |
 | SOCD / RS | `[11,mode,key1,key2]` / `[12,0,key1,key2]` | Два согласованных назначения, фиксированные политики. Произвольные tie/priority-группы не кодируются |

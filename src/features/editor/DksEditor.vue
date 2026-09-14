@@ -2,7 +2,7 @@
 import { t, mm } from '../../shared/ui/preferences';
 import { computed, ref, watch } from 'vue';
 import type { DksConfiguration, Edit, KeyboardSnapshot } from '../../shared/contracts/generated';
-import { clone, keyChoices } from './model';
+import { clone, firmwareActionChoices } from './model';
 import TravelSlider from '../../shared/ui/TravelSlider.vue';
 const props = defineProps<{
   snapshot: KeyboardSnapshot;
@@ -112,7 +112,7 @@ function stage() {
             :aria-label="t('Действие') + ' ' + (index + 1)"
           >
             <option :value="0">{{ t('Не задано') }}</option>
-            <option v-for="key in keyChoices" :key="key.code" :value="key.code">
+            <option v-for="key in firmwareActionChoices" :key="key.code" :value="key.code">
               {{ key.label }}
             </option>
           </select>
