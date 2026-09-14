@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-14",
+  "scope": "offline panel protocol prototype; no device adapter",
+  "checks": {
+    "rustTestsPassed": 8,
+    "pythonTestsPassed": 19,
+    "pythonTestsSkipped": 0,
+    "clippyWarningsDenied": "passed",
+    "rustfmt": "passed",
+    "notificationExample": "passed",
+    "armLibraryReleaseBuild": "passed"
+  },
+  "toolchain": {
+    "rust": "1.96.0",
+    "python": "3.13.14",
+    "capstone": "5.0.7",
+    "unicorn": "2.1.4",
+    "target": "thumbv7em-none-eabi"
+  },
+  "hostStateSizeBytes": 48,
+  "heapAllocations": 0,
+  "sourceSha256": {
+    "experiments/panel-api/Cargo.toml": "e066448f0c4891011df2da97843cdd8bfc4b2b48e3fe2f2dace5c7d40b9536e5",
+    "experiments/panel-api/Cargo.lock": "8e77dd5c87f40f972b7ba73ad5442ed909d889ea71b4abd1414fd6d5e58a76ca",
+    "experiments/panel-api/src/lib.rs": "81bc042f2b50a06be429234f5f1d505486ac161fe238126efdf2dacbbf8d7b06",
+    "experiments/panel-api/tests/lifecycle.rs": "a7a3ef55f76081b78a9d65e62d459dc282e91a14a0ca254c2f30f4662a97e9e9",
+    "experiments/panel-api/examples/notification.rs": "b6135333d5263419860330f24fce17ec424db0bf6736855a13c383bfdaec3ecc",
+    "tools/decode_firmware_startup.py": "2edd49f95e5f442a0f2c802a0f0e7e6204214534d2ebdd8b803050d9243718c5",
+    "tools/verify_panel_compositor.py": "c1cfac266de02f9d793d55e82492334a665ca77c76f3b8d56d132c81fe3a5a2c"
+  },
+  "armArtifact": {
+    "path": "target/panel-api/thumbv7em-none-eabi/release/libio_panel_api_prototype.rlib",
+    "sha256": "360147329bc449045e5c15751ad0775d7de048a2d77071c4366d280f75381031",
+    "kind": "unlinked Rust library"
+  },
+  "hardwareAccess": false,
+  "firmwareModified": false,
+  "patchedHexGenerated": false,
+  "desktopTransportEnabled": false,
+  "limits": [
+    "State size excludes stack, packets and MCU wrappers.",
+    "Original ARM encoder and stock discovery tested in isolated Unicorn, not on PCB.",
+    "Firmware insertion address, ABI, USB lifecycle binding and recovery are unfinished."
+  ],
+  "reproduction": "experiments/panel-api/README.md; docs/firmware/REPRODUCING.md",
+  "sourceHashNormalization": "UTF-8 text with LF line endings"
+}

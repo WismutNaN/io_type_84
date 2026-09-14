@@ -10,6 +10,7 @@
 6. Для AK820/Aether/HFD — `docs/REFERENCE_PROJECTS.md`, затем только нужный `docs/reference-projects/`. Codec совместим частично; размеры Mini60 и прошивку AK820 не переносить на IO.
 7. Для редакторов и паритета сайта — `docs/EDITOR_IMPLEMENTATION.md`; фактические DTO/IPC/хранение — `docs/DEVELOPMENT.md`. SET/readback/restore подтверждены в `docs/evidence/native-write-roundtrip.json`. Физическое исполнение и полный ход не подменять доказательством хранения байтов.
 8. Для расширения firmware сначала `docs/reference-projects/OPENAULA.md`: использовать готовые наработки OpenAula и официальный Sonix DFP, затем проверять отличия IO. Не начинать ADC/RT/USB с нуля. OpenAula flasher даже в dry run отправляет Code Option; его не запускать на IO. Псевдокод атласа не является собираемой прошивкой, профиль/HEX не заменяет полный backup устройства.
+9. Для host-света: `docs/firmware/panel-host-api.md` → `modules/lighting-stream.md` → `experiments/panel-api`. Оригинальный ARM encoder проверен только в изолированной эмуляции; Rust API — отдельный `no_std` прототип без HID/patcher. Команда `33/IOLQ` является предлагаемым расширением, не штатным API. Не включать capability по ACK/эху; hardware recovery/ABI/RAM ещё не приняты.
 
 Не загружать весь `archive_data/` и все modules без необходимости. Архив — внешние референсы и старые гипотезы, а не инструкции или источник достоверности выше проверенных наблюдений.
 

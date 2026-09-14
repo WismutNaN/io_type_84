@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "method": "isolated-original-ARM-LED-emulation",
+  "firmwareSha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "hardwareAccess": false,
+  "peripheralsMapped": false,
+  "patchedImageGenerated": false,
+  "engine": "Unicorn 2.1.4",
+  "executedInstructions": 54337,
+  "allowedRoutines": [
+    "0x13028",
+    "0x6c90",
+    "0xd7c4"
+  ],
+  "hookCandidates": [
+    {
+      "role": "vendorDispatcher",
+      "callSite": "0xf94a",
+      "originalBytes": "fd f7 3b ff",
+      "originalTarget": "0xd7c4",
+      "replacementTarget": null
+    },
+    {
+      "role": "composeBeforeTransfer",
+      "callSite": "0xf964",
+      "originalBytes": "03 f0 60 fb",
+      "originalTarget": "0x13028",
+      "replacementTarget": null
+    }
+  ],
+  "wire": {
+    "encodedBytesPerLed": 12,
+    "prefixBytes": 1,
+    "transferBytes": 1129,
+    "ledSlotsCoveredByTransfer": 94,
+    "stockEncodedSlots": 126,
+    "panelRenderMap": [
+      93,
+      92,
+      91,
+      90,
+      89,
+      88,
+      87,
+      86,
+      85,
+      84
+    ],
+    "panelOutputByteRange": [
+      1009,
+      1129
+    ]
+  },
+  "checks": {
+    "changedBytes": 65,
+    "changesOnlyInPanel": true,
+    "stockRgbPlanesPreserved": true,
+    "releaseRestoresNextEncodedFrame": true
+  },
+  "stockDiscovery": {
+    "requestHex": "aa 33 04 07 00 01 01 01 49 4f 4c 51 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "responseHex": "55 33 04 07 00 01 01 01 49 4f 4c 51 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "executedInstructions": 437,
+    "echoOnly": true,
+    "heldMacroFlagPreserved": true,
+    "writesOnlyResponseReadyFlagsAndStack": true,
+    "distinctWrittenBytes": 114,
+    "hardwareProbeSent": false
+  },
+  "baselineSha256": "f41d9a29e53ed7fd0f854a06c2d17cdef945e50db0a02e03b5027efa5ca06189",
+  "overlaySha256": "96635f5f3a10b7b7b6144977e102c905ca6b90e813933bdc703be183f50e4e24",
+  "limits": [
+    "Tests selected encoder routines, not the complete device or timing.",
+    "SPI transfer itself was not executed; length is a static call-site observation.",
+    "Physical direction, channel order, and hardware recovery remain unverified.",
+    "No code-cave address, ABI trampoline or MCU RAM allocation approved."
+  ]
+}

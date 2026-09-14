@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "method": "offline-scatter-decode",
+  "hardwareAccess": false,
+  "firmwareSha256": "8f5ef507771c6795258eb7521cfc1b46269a5b301548767ae87a3f1a83a50d45",
+  "ramBase": "0x20000000",
+  "ramLength": 32328,
+  "ramSha256": "ae2f6b7537c1c6a3c8bcdc70fc614517024de01794b9088177e081df55f4102a",
+  "scatterRecords": [
+    {
+      "tableAddress": "0x15c28",
+      "source": "0x15c48",
+      "sourceBytesConsumed": 1562,
+      "destination": "0x20000000",
+      "length": 4608,
+      "routine": "0x2f4"
+    },
+    {
+      "tableAddress": "0x15c38",
+      "source": "0x16264",
+      "sourceBytesConsumed": 0,
+      "destination": "0x20001200",
+      "length": 27720,
+      "routine": "0x115c4"
+    }
+  ],
+  "usb": {
+    "interfaceCount": 4,
+    "interfaces": [
+      {
+        "index": 0,
+        "recordAddress": "0x2000116c",
+        "reportDescriptorAddress": "0x200010df",
+        "length": 65,
+        "descriptorHex": "05 01 09 06 a1 01 05 07 19 e0 29 e7 15 00 25 01 75 01 95 08 81 02 95 01 75 08 81 01 95 05 75 01 05 08 19 01 29 05 91 02 95 01 75 03 91 01 95 06 75 08 15 00 26 ff 00 05 07 19 00 2a ff 00 81 00 c0"
+      },
+      {
+        "index": 1,
+        "recordAddress": "0x20001184",
+        "reportDescriptorAddress": "0x20001058",
+        "length": 135,
+        "descriptorHex": "05 0c 09 01 a1 01 85 03 19 00 2a 3c 03 15 00 26 3c 03 95 01 75 10 81 00 c0 05 01 09 80 a1 01 85 02 05 01 19 81 29 83 15 00 25 01 95 03 75 01 81 02 95 01 75 05 81 01 c0 05 01 09 06 a1 01 85 01 05 07 15 00 25 01 19 00 29 77 95 78 75 01 81 02 c0 05 01 09 02 a1 01 85 06 09 01 a1 00 05 09 19 01 29 03 15 00 25 01 95 05 75 01 81 02 95 01 75 03 81 01 05 01 09 30 09 31 09 38 15 81 25 7f 75 08 95 03 81 06 c0 c0"
+      },
+      {
+        "index": 2,
+        "recordAddress": "0x2000119c",
+        "reportDescriptorAddress": "0x20001120",
+        "length": 34,
+        "descriptorHex": "06 68 ff 09 61 a1 01 09 62 15 00 26 ff 00 95 40 75 08 81 02 09 63 15 00 26 ff 00 95 40 75 08 91 02 c0"
+      },
+      {
+        "index": 3,
+        "recordAddress": "0x200011b4",
+        "reportDescriptorAddress": "0x20001142",
+        "length": 35,
+        "descriptorHex": "06 67 ff 09 61 a1 01 09 62 15 00 26 ff 00 95 40 75 08 b1 02 09 63 15 00 26 ff 00 96 00 10 75 08 91 02 c0"
+      }
+    ],
+    "getReportCallback": "0x12c95",
+    "setReportCallback": "0x1376d",
+    "lampArrayInterfaceInCallback": 4,
+    "lampArrayInterfaceAdvertised": false
+  },
+  "limits": [
+    "Initial RAM reconstructed from public HEX, not read from device.",
+    "Callback semantics require control-flow analysis, not pointer presence alone.",
+    "No main loop, peripheral driver, ISP or firmware writer executed."
+  ],
+  "emulation": {
+    "engine": "Unicorn 2.1.4",
+    "matchedBytes": 32328,
+    "executedInstructions": 52274,
+    "allowedRoutines": [
+      "0x2f4",
+      "0x115c4"
+    ],
+    "peripheralsMapped": false
+  }
+}
