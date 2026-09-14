@@ -1,6 +1,6 @@
 # Текущее состояние
 
-Обновлено: 2026-09-14. Начать с [карты возможностей](INTEGRATION.md), затем читать
+Обновлено: 2026-09-14. Начать с [матрицы функций и следующей работы](FEATURE_MATRIX.md), затем читать
 только нужный модуль/фазу. [Решения](DECISIONS.md), [история](WORKLOG.md),
 [фактический код и запуск](DEVELOPMENT.md).
 
@@ -15,6 +15,13 @@
 
 Это принятый план, не три готовых режима EXE. [ADR-0007](adr/0007-integration-levels.md).
 Сетевые уведомления и действия ОС требуют помощника даже с новой firmware.
+
+Владелец сообщил об отказе производителя предоставить материалы. Следующий выпуск
+планируется на штатной firmware: **самостоятельный фон и цифровые действия**, рядом
+с физической приёмкой A и кандидата DKS/MT/Fn → отдельный код → действие B.
+Мост ещё не проверен; он может снять зависимость части условий глубины от analog.
+[ADR-0008](adr/0008-stock-first-delivery.md). README обозначает независимый статус
+репозитория и содержит ссылки IO; не является журналом обращения к производителю.
 
 ## Что уже есть
 
@@ -71,12 +78,14 @@ M4/FPU до 192 МГц, 160 КиБ RAM; точный MCU/PCB и частоты I
 
 [Возможности и ограничения](firmware/chip-feasibility.md),
 [flash/security и расхождения](firmware/sonix-manual-safety.md),
-[применимость новых cases](firmware/case-coverage.md),
-[готовый запрос IO/OEM — не отправлен](firmware/manufacturer-request.md).
-Protection/чистое подавление составных нажатий требуют обработки до HID.
+[полная матрица cases](FEATURE_MATRIX.md),
+[история запроса IO/OEM](firmware/manufacturer-request.md).
+Аппаратный Protection требует изменения тракта до HID; для замены составных
+нажатий на ПК возможен отдельный перехват ОС или выделенное stock-назначение.
 Слои/правила выглядят посильными для MCU, но бюджеты пока расчётные, analog не принят.
-Сетевые условия остаются в помощнике. Следующий шаг C — комплект производителя,
-идентификация/backup/recovery, затем узкий API; основное приложение не менялось.
+Сетевые условия остаются в помощнике. C продолжается для доказанного пробела A/B;
+идентификация/backup/recovery перед аппаратным переносом обязательны, комплект IO
+больше не ожидается. Основное приложение этой систематизацией не менялось.
 
 ## Следующая работа и маршруты
 
@@ -84,9 +93,10 @@ Protection/чистое подавление составных нажатий �
 |---|---|
 | A: приёмка/полнота настройки | [Фазы 2–9](PLAN.md#phase-2) → [покрытие](EDITOR_IMPLEMENTATION.md) → [configuration](../modules/configuration.md) → нужный протокол |
 | B: самостоятельный фон | [Фаза 10A](PLAN.md#phase-10) → [companion](../modules/companion.md) → [action-catalog](../modules/action-catalog.md) |
+| A→B: действие по штатному событию | [Кандидат и приёмка](../modules/companion.md#stock-trigger) → [семантика PgUp](FEATURE_MATRIX.md) |
 | Аналоговые условия | [Фаза 12](PLAN.md#phase-12) → [automation](../modules/automation.md); не блокирует цифровой фон |
 | C: API полосы | [lighting-stream](../modules/lighting-stream.md) → [контракт](firmware/panel-host-api.md) → [firmware roadmap](firmware/ROADMAP.md) |
-| C: MCU, исходники и безопасный стенд | [оценка MCU](firmware/chip-feasibility.md) → [manual/security](firmware/sonix-manual-safety.md) → [запрос IO](firmware/manufacturer-request.md) |
+| C: MCU и безопасный стенд при необходимости | [оценка MCU](firmware/chip-feasibility.md) → [manual/security](firmware/sonix-manual-safety.md) → [recovery](firmware/update-recovery.md) |
 
 Контрольные точки: `6886b8e` проверяемая запись; `e064e4b` каталог/жесты;
 `bec0f05` firmware output map и изолированный API. Сведения о последних сборках
