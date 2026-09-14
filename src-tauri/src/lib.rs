@@ -80,10 +80,21 @@ fn validate_automation(profile: io_core::automation::AutomationProfile) -> Resul
 async fn configure_automation(
     profile: io_core::automation::AutomationProfile,
     enabled: bool,
+    ownership_token: Option<String>,
     service: tauri::State<'_, KeyboardService>,
 ) -> Result<()> {
     let s = service.inner().clone();
-    background(move || s.configure_automation(profile, enabled)).await
+    background(move || s.configure_automation(profile, enabled, ownership_token)).await
+}
+
+#[tauri::command]
+async fn prepare_automation(
+    profile: io_core::automation::AutomationProfile,
+    base_revision: String,
+    service: tauri::State<'_, KeyboardService>,
+) -> Result<Option<ChangePreview>> {
+    let s = service.inner().clone();
+    background(move || s.prepare_automation(profile, base_revision)).await
 }
 
 fn app_context() -> tauri::Context<tauri::Wry> {
@@ -108,6 +119,7 @@ pub fn run() {
             clear_history,
             set_history_capacity,
             configure_automation,
+            prepare_automation,
             validate_automation,
             prepare_changes,
             apply_changes,

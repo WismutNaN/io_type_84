@@ -158,7 +158,7 @@ fn send_key(key: u16, scan: u16, flags: u32) -> Result<()> {
                 wScan: scan,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: 0,
+                dwExtraInfo: crate::INJECTED_INPUT_TAG,
             },
         },
     };

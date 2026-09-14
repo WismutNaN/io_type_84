@@ -1,6 +1,7 @@
 //! Каталог действий и жесты независимы от устройства, Win32 и хранения профилей.
 use crate::{
     depth::ComputerAction,
+    exclusive_depth::{ChoiceState, DepthChoice},
     keyboard::{AppError, Result},
 };
 use serde::{Deserialize, Serialize};
@@ -62,6 +63,8 @@ pub struct GestureRule {
 pub struct AutomationProfile {
     pub actions: Vec<ActionDefinition>,
     pub gestures: Vec<GestureRule>,
+    #[serde(default)]
+    pub depth_choices: Vec<DepthChoice>,
 }
 pub fn supported_key(key: u8) -> bool {
     matches!(key, 4..=69 | 73..=82 | 224..=231)
@@ -70,6 +73,9 @@ fn valid_text(text: &str) -> bool {
     text.chars().count() <= 2000 && !text.contains('\0')
 }
 impl AutomationProfile {
+    pub fn has_rules(&self) -> bool {
+        !self.gestures.is_empty() || !self.depth_choices.is_empty()
+    }
     pub fn validate(&self) -> Result<()> {
         let fail = || {
             AppError::new(
@@ -83,7 +89,7 @@ impl AutomationProfile {
                 && s.bytes()
                     .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
         };
-        if self.actions.len() > 256 || self.gestures.len() > 256 {
+        if self.actions.len() > 256 || self.gestures.len() + self.depth_choices.len() > 256 {
             return Err(fail());
         }
         let mut ids = BTreeSet::new();
@@ -152,6 +158,7 @@ impl AutomationProfile {
                         platform_commands: PlatformCommands::default(),
                     }],
                     gestures: vec![],
+                    depth_choices: vec![],
                 }
                 .validate()?;
             }
@@ -172,6 +179,23 @@ impl AutomationProfile {
                 return Err(fail());
             }
         }
+        let mut owned = BTreeSet::new();
+        for r in &self.depth_choices {
+            if !valid_id(&r.id)
+                || !rule_ids.insert(&r.id)
+                || r.slot >= 128
+                || !owned.insert(r.slot)
+                || !ids.contains(&r.light_action_id)
+                || !ids.contains(&r.deep_action_id)
+                || !(300..=3000).contains(&r.light_um)
+                || r.deep_um < r.light_um + 100
+                || r.deep_um > 3200
+                || u32::from(r.release_um) + 100 > u32::from(r.light_um)
+                || self.gestures.iter().any(|g| g.slots.contains(&r.slot))
+            {
+                return Err(fail());
+            }
+        }
         Ok(())
     }
 }
@@ -184,9 +208,14 @@ pub struct GestureEngine {
     pub profile: AutomationProfile,
     samples: [Option<(u16, u64)>; 128],
     states: Vec<GestureState>,
+    choices: Vec<ChoiceState>,
+    pending: Vec<(u64, String)>,
 }
 impl GestureEngine {
     pub fn new(profile: AutomationProfile) -> Self {
+        let choices = (0..profile.depth_choices.len())
+            .map(|_| ChoiceState::default())
+            .collect();
         let states = (0..profile.gestures.len())
             .map(|_| GestureState::default())
             .collect();
@@ -194,15 +223,34 @@ impl GestureEngine {
             profile,
             samples: [None; 128],
             states,
+            choices,
+            pending: Vec::new(),
         }
     }
     pub fn sample(&mut self, slot: u8, depth: u16, now: u64) {
+        if depth > 10_000 {
+            return;
+        }
+        for (rule, state) in self.profile.depth_choices.iter().zip(&mut self.choices) {
+            if rule.slot == slot
+                && let Some(action) = state.sample(rule, depth, now)
+            {
+                self.pending.push((now, action));
+            }
+        }
         if let Some(sample) = self.samples.get_mut(usize::from(slot)) {
             *sample = Some((depth, now));
         }
     }
     pub fn tick(&mut self, now: u64) -> Vec<String> {
-        let mut fired = Vec::new();
+        for state in &mut self.choices {
+            state.expire(now);
+        }
+        let mut fired = std::mem::take(&mut self.pending)
+            .into_iter()
+            .filter(|(time, _)| now >= *time && now - *time < 600)
+            .map(|(_, action)| action)
+            .collect::<Vec<_>>();
         for (rule, state) in self.profile.gestures.iter().zip(&mut self.states) {
             // Каждый член сочетания должен быть подтверждён свежим аналоговым пакетом.
             let samples: Option<Vec<_>> = rule
@@ -258,6 +306,7 @@ mod tests {
                 hold_ms: 800,
                 action_id: "word".into(),
             }],
+            depth_choices: vec![],
         }
     }
     #[test]
@@ -286,6 +335,52 @@ mod tests {
             engine.sample(slot, 2000, 2000);
         }
         assert!(engine.tick(2000).is_empty());
+    }
+    #[test]
+    fn depth_choice_cannot_share_input_and_each_slot_has_its_own_cycle() {
+        let mut p = profile();
+        p.gestures.clear();
+        p.actions.push(ActionDefinition {
+            id: "tap".into(),
+            name: "Page".into(),
+            command: ActionCommand::Key {
+                key: 75,
+                modifiers: 0,
+            },
+            platform_commands: PlatformCommands::default(),
+        });
+        p.depth_choices = [105, 108]
+            .into_iter()
+            .map(|slot| DepthChoice {
+                id: format!("d-{slot}"),
+                slot,
+                light_um: 600,
+                deep_um: 3000,
+                release_um: 200,
+                light_action_id: "tap".into(),
+                deep_action_id: "word".into(),
+            })
+            .collect();
+        assert!(p.validate().is_ok());
+        let mut e = GestureEngine::new(p.clone());
+        for slot in [105, 108] {
+            e.sample(slot, 0, 0);
+        }
+        e.sample(105, 800, 10);
+        e.sample(108, 3980, 11);
+        assert_eq!(e.tick(11), ["word"]);
+        e.sample(108, 0, 12);
+        e.sample(105, 0, 13);
+        assert_eq!(e.tick(13), ["tap"]);
+        e.sample(105, 800, 14);
+        e.sample(105, 0, 15);
+        assert!(e.tick(1000).is_empty()); // queued output expires too
+        p.gestures = profile().gestures;
+        p.gestures[0].slots = vec![105];
+        assert!(p.validate().is_err());
+        p.gestures.clear();
+        p.depth_choices[1].slot = 105;
+        assert!(p.validate().is_err());
     }
     #[test]
     fn references_and_unbounded_actions_are_rejected() {

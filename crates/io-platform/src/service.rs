@@ -15,6 +15,7 @@ use std::{
 };
 
 use crate::action_runtime::ActionRuntime;
+use crate::input_ownership::InputOwnership;
 use io_core::automation::{AutomationProfile, GestureEngine};
 
 type Job = Box<dyn FnOnce(&mut Worker) + Send>;
@@ -22,11 +23,14 @@ struct Worker {
     device: Option<NativeDevice>,
     snapshot: Option<RawSnapshot>,
     prepared: Option<PreparedChange>,
+    prepared_is_ownership_restore: bool,
     monitor: Arc<Mutex<MonitorState>>,
     recovery_dir: PathBuf,
     rules: GestureEngine,
     runtime: ActionRuntime,
     epoch: Instant,
+    ownership: Option<InputOwnership>,
+    prepared_ownership: Option<(AutomationProfile, InputOwnership)>,
 }
 
 #[derive(Clone)]
@@ -49,11 +53,14 @@ impl KeyboardService {
                 device: None,
                 snapshot: None,
                 prepared: None,
+                prepared_is_ownership_restore: false,
                 monitor: m,
                 recovery_dir,
                 rules: GestureEngine::new(AutomationProfile::default()),
                 runtime: ActionRuntime::new(Arc::clone(&monitor_for_actions)),
                 epoch: Instant::now(),
+                ownership: None,
+                prepared_ownership: None,
             };
             loop {
                 match receiver.recv_timeout(Duration::from_millis(2)) {
@@ -73,10 +80,17 @@ impl KeyboardService {
                     }
                 }
 
+                let failed = {
+                    let state = worker.monitor.lock().expect("monitor");
+                    worker.ownership.is_some() && !state.rules_enabled && state.rule_error.is_some()
+                };
+                if failed {
+                    worker.stop_and_report();
+                }
                 let active = worker.monitor.lock().expect("monitor").active;
                 if active {
                     if beat.lock().expect("heartbeat").elapsed() > Duration::from_secs(5) {
-                        worker.stop();
+                        worker.stop_and_report();
                         worker.monitor.lock().expect("monitor").message =
                             Some("Наблюдение остановлено: интерфейс не отвечает.".into());
                         continue;
@@ -116,7 +130,7 @@ impl KeyboardService {
                                 }
                             }
                             Err(error) => {
-                                worker.stop();
+                                worker.stop_and_report();
                                 worker.device = None;
                                 worker.monitor.lock().expect("monitor").message =
                                     Some(error.message);
@@ -125,7 +139,7 @@ impl KeyboardService {
                     }
                 }
             }
-            worker.stop();
+            worker.stop_and_report();
         });
         Self {
             sender,
@@ -158,7 +172,7 @@ impl KeyboardService {
 
     pub fn connect(&self) -> Result<KeyboardSnapshot> {
         self.request(|w| {
-            w.stop();
+            w.stop()?;
             w.device = None;
             w.prepared = None;
             let mut device = NativeDevice::open()?;
@@ -167,12 +181,15 @@ impl KeyboardService {
             w.snapshot = Some(snapshot);
             w.device = Some(device);
             *w.monitor.lock().expect("monitor") = MonitorState::default();
+            if InputOwnership::load(&w.recovery_dir)?.is_some() {
+                w.monitor.lock().expect("monitor").message = Some("Предыдущий сеанс не завершён. Нажмите «Восстановить», чтобы вернуть назначения PgUp/PgDn.".into());
+            }
             Ok(dto)
         })
     }
     pub fn disconnect(&self) -> Result<()> {
         self.request(|w| {
-            w.stop();
+            w.stop()?;
             w.device = None;
             w.snapshot = None;
             w.prepared = None;
@@ -181,7 +198,7 @@ impl KeyboardService {
     }
     pub fn refresh(&self) -> Result<KeyboardSnapshot> {
         self.request(|w| {
-            w.stop();
+            w.stop()?;
             w.device = None;
             w.device = Some(NativeDevice::open()?);
             let snapshot = w.device()?.snapshot()?;
@@ -194,7 +211,7 @@ impl KeyboardService {
     pub fn monitor(&self, enabled: bool) -> Result<MonitorFrame> {
         *self.heartbeat.lock().expect("heartbeat") = Instant::now();
         self.request(move|w|{
-            w.stop();
+            w.stop()?;
             if enabled {
                 w.device=None;
                 w.device=Some(NativeDevice::open()?);
@@ -210,7 +227,41 @@ impl KeyboardService {
         *self.heartbeat.lock().expect("heartbeat") = Instant::now();
         self.monitor.lock().expect("monitor").frame()
     }
-    pub fn configure_automation(&self, profile: AutomationProfile, enabled: bool) -> Result<()> {
+    pub fn prepare_automation(
+        &self,
+        profile: AutomationProfile,
+        base_revision: String,
+    ) -> Result<Option<ChangePreview>> {
+        profile.validate()?;
+        self.request(move |w| {
+            let before = w
+                .prepared
+                .as_ref()
+                .map(|p| &p.after)
+                .filter(|s| s.revision() == base_revision)
+                .or_else(|| {
+                    w.snapshot
+                        .as_ref()
+                        .filter(|s| s.revision() == base_revision)
+                })
+                .ok_or_else(|| {
+                    AppError::new(
+                        "stalePlan",
+                        "Перечитайте клавиатуру и проверьте изменения заново.",
+                    )
+                })?;
+            let ownership = InputOwnership::prepare(before, &profile)?;
+            let preview = ownership.as_ref().map(|o| o.plan().preview());
+            w.prepared_ownership = ownership.map(|o| (profile, o));
+            Ok(preview)
+        })
+    }
+    pub fn configure_automation(
+        &self,
+        profile: AutomationProfile,
+        enabled: bool,
+        ownership_token: Option<String>,
+    ) -> Result<()> {
         profile.validate()?;
         for rule in &profile.gestures {
             if rule
@@ -222,18 +273,75 @@ impl KeyboardService {
             }
         }
         self.request(move |w| {
-            let mut state = w.monitor.lock().expect("monitor");
-            if enabled && !state.active {
+            if !enabled {
+                w.stop()?;
+                return Ok(());
+            }
+            let ownership = if profile.depth_choices.is_empty() {
+                None
+            } else {
+                let (expected, owner) = w.prepared_ownership.take().ok_or_else(|| {
+                    AppError::new(
+                        "missingPlan",
+                        "Сначала проверьте передачу клавиш помощнику.",
+                    )
+                })?;
+                if expected != profile
+                    || ownership_token.as_deref() != Some(owner.plan().token.as_str())
+                {
+                    return Err(AppError::new(
+                        "stalePlan",
+                        "Правила изменились. Проверьте передачу клавиш заново.",
+                    ));
+                }
+                Some(owner)
+            };
+            w.stop()?;
+            if InputOwnership::load(&w.recovery_dir)?.is_some() {
                 return Err(AppError::new(
-                    "monitorRequired",
-                    "Сначала включите наблюдение.",
+                    "captureRecoveryRequired",
+                    "Сначала восстановите назначения предыдущего сеанса.",
                 ));
             }
-            w.runtime.cancel();
-            state.rules_enabled = enabled && !profile.gestures.is_empty();
+            w.device = None;
+            w.device = Some(NativeDevice::open()?);
+            let setup = (|| -> Result<()> {
+                if let Some(owner) = ownership {
+                    let plan = owner.plan();
+                    if w.device()?.snapshot()?.revision() != plan.before.revision() {
+                        return Err(AppError::new(
+                            "externalChange",
+                            "Клавиатура изменилась. Перечитайте её перед передачей клавиш.",
+                        ));
+                    }
+                    // Durable journal is installed before the first SET, including uncertain failures.
+                    owner.persist(&w.recovery_dir)?;
+                    w.ownership = Some(owner);
+                    let directory = w.recovery_dir.join("input-sessions");
+                    if !plan.blocks.is_empty()
+                        && let Err(error) = changes::apply(w.device()?, &plan, &directory)
+                    {
+                        if ["externalChange", "backupFailed"].contains(&error.code.as_str()) {
+                            // These errors are raised before any SET. Do not overwrite a competing edit.
+                            w.ownership = None;
+                            InputOwnership::clear(&w.recovery_dir)?;
+                        }
+                        return Err(error);
+                    }
+                }
+                w.device()?.start_monitor()?;
+                Ok(())
+            })();
+            if let Err(error) = setup {
+                w.stop()?;
+                return Err(error);
+            }
+            w.rules = GestureEngine::new(profile);
+            let mut state = w.monitor.lock().expect("monitor");
+            state.active = true;
+            state.rules_enabled = w.rules.profile.has_rules();
             state.rule_firings = 0;
             state.rule_error = None;
-            w.rules = GestureEngine::new(profile);
             Ok(())
         })
     }
@@ -248,6 +356,13 @@ impl KeyboardService {
     }
     pub fn prepare(&self, request: ChangeRequest) -> Result<ChangePreview> {
         self.request(move |w| {
+            if w.ownership.is_none() && InputOwnership::load(&w.recovery_dir)?.is_some() {
+                return Err(AppError::new(
+                    "captureRecoveryRequired",
+                    "Сначала восстановите назначения предыдущего сеанса.",
+                ));
+            }
+            w.prepared_is_ownership_restore = false;
             let before = w
                 .snapshot
                 .as_ref()
@@ -260,7 +375,7 @@ impl KeyboardService {
     }
     pub fn apply(&self, token: String) -> Result<ApplyResult> {
         self.request(move |w| {
-            w.stop();
+            w.stop()?;
             w.device = None;
             w.device = Some(NativeDevice::open()?);
             let plan = w
@@ -273,11 +388,21 @@ impl KeyboardService {
                     "План уже изменился. Проверьте изменения заново.",
                 ));
             }
-            let directory = w.recovery_dir.clone();
+            let directory = if w.prepared_is_ownership_restore {
+                w.recovery_dir.join("input-sessions")
+            } else {
+                w.recovery_dir.clone()
+            };
             let result = changes::apply(w.device()?, &plan, &directory);
             match result {
                 Ok(dto) => {
-                    w.snapshot = Some(w.device()?.snapshot()?);
+                    let current = w.device()?.snapshot()?;
+                    if let Some(owner) = InputOwnership::load(&w.recovery_dir)?
+                        && owner.restore_plan(&current)?.blocks.is_empty()
+                    {
+                        InputOwnership::clear(&w.recovery_dir)?;
+                    }
+                    w.snapshot = Some(current);
                     Ok(dto)
                 }
                 Err(error) => {
@@ -289,9 +414,19 @@ impl KeyboardService {
     }
     pub fn prepare_recovery(&self) -> Result<ChangePreview> {
         self.request(|w| {
-            w.stop();
+            w.stop()?;
             w.device = None;
             w.device = Some(NativeDevice::open()?);
+            if let Some(owner) = InputOwnership::load(&w.recovery_dir)? {
+                let current = w.device()?.snapshot()?;
+                let plan = owner.restore_plan(&current)?;
+                w.prepared_is_ownership_restore = true;
+                let preview = plan.preview();
+                w.snapshot = Some(current);
+                w.prepared = Some(plan);
+                return Ok(preview);
+            }
+            w.prepared_is_ownership_restore = false;
             let mut paths = std::fs::read_dir(&w.recovery_dir)
                 .map_err(|_| AppError::new("noRecovery", "Резервные снимки ещё не созданы."))?
                 .filter_map(|e| e.ok())
@@ -378,15 +513,39 @@ impl Worker {
             .as_mut()
             .ok_or_else(|| AppError::new("notConnected", "Клавиатура не подключена к приложению."))
     }
-    fn stop(&mut self) {
+    fn stop(&mut self) -> Result<()> {
         self.runtime.cancel();
         self.rules = GestureEngine::new(AutomationProfile::default());
-        if let Some(device) = self.device.as_mut()
-            && let Err(e) = device.stop_monitor()
-        {
-            self.monitor.lock().expect("monitor").message = Some(e.message);
-        }
         self.monitor.lock().expect("monitor").pause();
+        let stopped = self.device.as_mut().map(|d| d.stop_monitor()).transpose();
+        if let Some(owner) = self.ownership.clone() {
+            // A timed-out handle cannot be used to decide whether a SET succeeded.
+            self.device = None;
+            self.device = Some(NativeDevice::open()?);
+            let current = self.device()?.snapshot()?;
+            let plan = owner.restore_plan(&current)?;
+            if !plan.blocks.is_empty() {
+                let directory = self.recovery_dir.join("input-sessions");
+                changes::apply(self.device()?, &plan, &directory)?;
+            }
+            self.snapshot = Some(self.device()?.snapshot()?);
+            InputOwnership::clear(&self.recovery_dir)?;
+            self.ownership = None;
+            return Ok(());
+        }
+        if let Err(error) = stopped {
+            self.monitor.lock().expect("monitor").message = Some(error.message);
+        }
+        Ok(())
+    }
+    fn stop_and_report(&mut self) {
+        if let Err(e) = self.stop() {
+            // Retain the durable journal; do not retry uncertain SET in the worker loop.
+            self.ownership = None;
+            self.device = None;
+            self.monitor.lock().expect("monitor").rule_error =
+                Some(format!("Восстановление не завершено: {}", e.message));
+        }
     }
 }
 

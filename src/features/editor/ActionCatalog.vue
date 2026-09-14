@@ -20,7 +20,11 @@ const visible = computed(() =>
   props.profile.actions.filter((a) => t(a.name).toLowerCase().includes(search.value.toLowerCase())),
 );
 const uses = computed(
-  () => props.profile.gestures.filter((g) => g.actionId === selected.value).length,
+  () =>
+    props.profile.gestures.filter((g) => g.actionId === selected.value).length +
+    props.profile.depthChoices.filter(
+      (r) => r.lightActionId === selected.value || r.deepActionId === selected.value,
+    ).length,
 );
 watch(
   [selected, () => props.profile],

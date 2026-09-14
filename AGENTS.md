@@ -34,6 +34,11 @@ stock + helper проверить G1/G2 (захват и выходные leases
 
 Открытое приложение Rust + Tauri + TS + Vue. Windows + USB сначала, другие ОС предусматриваются портами и adapters. DDD-core не зависит от Tauri/Win32/hidapi. SparkLink/AureTrix не является транспортом подключённого IO White; текущая рабочая спецификация — AA/55 через FF68:0061.
 
+Для рабочего light/deep: `modules/exclusive-depth.md`. G1 для PgUp/PgDn base/Fn
+подтверждён в `docs/evidence/stock-capture-acceptance-v1.17.json`. Временное владение
+в service имеет preview/токен и `input-ownership.json`; не смешивать его recovery
+с обычной историей изменений. Авария процесса/USB не имеет аппаратного TTL.
+
 Для stock-захвата/DKS/MT/макросов читать `docs/firmware/stock-input-v1.17.md`. Не считать `[2,0,0,0]` отключением. Wire macro kind 3=keyboard/1=mouse отличается от доменного. OS-mode (Fn+M) вне девяти блоков backup; ARM и FB не заменяют цифровой положительный/отрицательный контроль.
 
 ## Документация

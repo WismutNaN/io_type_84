@@ -1,4 +1,4 @@
-import { readAutomation, defaultAutomation, migrateDepthRules } from './computer-rules';
+import { readAutomation, defaultAutomation, migrateDepthRules, hasRules } from './computer-rules';
 import type { AutomationProfile } from '../../shared/contracts/generated';
 type WorkspaceEdit = Edit | { kind: 'automation'; value: AutomationProfile };
 import { computed, ref, onScopeDispose } from 'vue';
@@ -55,6 +55,11 @@ export function useWorkspace() {
     edits.value.filter((e): e is Edit => e.kind !== 'automation'),
   );
   const startActions = ref(true);
+  const ownershipPreview = ref<ChangePreview | null>(null);
+  const actionsOnly = ref(false);
+  const reviewAutomation = computed(() =>
+    actionsOnly.value ? appliedAutomation.value : automation.value,
+  );
   const live = ref<MonitorFrame>(emptyFrame());
   const receivedAt = ref(performance.now());
   const clock = ref(performance.now());
@@ -231,33 +236,64 @@ export function useWorkspace() {
     if (!snapshot.value) return;
     await run('Проверка изменений…', async () => {
       recoveryPreview.value = false;
+      actionsOnly.value = false;
+      ownershipPreview.value = null;
       startActions.value = automationDirty.value
-        ? automation.value.gestures.length > 0
+        ? hasRules(automation.value)
         : live.value.rulesEnabled;
       readAutomation(automation.value);
       if (native) await invoke('validate_automation', { profile: clone(automation.value) });
-      preview.value = hardwareEdits.value.length
+      const hardware = hardwareEdits.value.length
         ? await invoke<ChangePreview>('prepare_changes', {
             request: { baseRevision: snapshot.value!.revision, edits: clone(hardwareEdits.value) },
           })
         : { token: '', changes: [] };
+      if (native && connected.value && automation.value.depthChoices.length)
+        ownershipPreview.value = await invoke<ChangePreview | null>('prepare_automation', {
+          profile: clone(automation.value),
+          baseRevision: hardware.token || snapshot.value!.revision,
+        });
+      preview.value = hardware;
     });
   }
   async function setActionsEnabled(enabled: boolean) {
     await run(enabled ? 'Включение действий…' : 'Остановка…', async () => {
-      if (enabled && !live.value.active)
-        live.value = await invoke<MonitorFrame>('set_monitor', { enabled: true });
-      await invoke('configure_automation', { profile: clone(appliedAutomation.value), enabled });
+      if (enabled && appliedAutomation.value.depthChoices.length) {
+        if (!snapshot.value) return;
+        actionsOnly.value = true;
+        recoveryPreview.value = false;
+        startActions.value = true;
+        ownershipPreview.value = await invoke<ChangePreview | null>('prepare_automation', {
+          profile: clone(appliedAutomation.value),
+          baseRevision: snapshot.value.revision,
+        });
+        preview.value = { token: '', changes: [] };
+        return;
+      }
+      await invoke('configure_automation', {
+        profile: clone(appliedAutomation.value),
+        enabled,
+        ownershipToken: null,
+      });
       await poll();
     });
   }
   async function apply() {
     if (!preview.value) return;
     const prepared = preview.value;
-    const next = clone(automation.value);
+    const next = clone(reviewAutomation.value);
+    const only = actionsOnly.value;
+    const ownershipToken = ownershipPreview.value?.token ?? null;
     const isRecovery = recoveryPreview.value;
     preview.value = null;
     await run('Применение…', async () => {
+      if (only) {
+        await invoke('configure_automation', { profile: next, enabled: true, ownershipToken });
+        await poll();
+        actionsOnly.value = false;
+        notice.value = 'Выбор по глубине включён. Отпустите клавиши перед первым нажатием.';
+        return;
+      }
       if (prepared.token && prepared.changes.length) {
         const result = await invoke<ApplyResult>('apply_changes', { token: prepared.token });
         snapshot.value = result.snapshot;
@@ -278,10 +314,9 @@ export function useWorkspace() {
       localStorage.setItem('io.automation.v1', JSON.stringify(next));
       try {
         if (native && connected.value) {
-          const enabled = startActions.value && next.gestures.length > 0;
-          if (enabled && !live.value.active)
-            live.value = await invoke<MonitorFrame>('set_monitor', { enabled: true });
-          await invoke('configure_automation', { profile: next, enabled });
+          const enabled = startActions.value && hasRules(next);
+          await invoke('configure_automation', { profile: next, enabled, ownershipToken });
+          await poll();
         }
       } catch (e) {
         if (previous === null) localStorage.removeItem('io.automation.v1');
@@ -291,7 +326,7 @@ export function useWorkspace() {
       appliedAutomation.value = next;
       discard();
       notice.value =
-        native && connected.value && startActions.value && next.gestures.length
+        native && connected.value && startActions.value && hasRules(next)
           ? 'Применено. Жесты компьютера включены.'
           : 'Применено. Действия сохранены на компьютере.';
     });
@@ -299,6 +334,8 @@ export function useWorkspace() {
   async function recovery() {
     await run('Подготовка восстановления…', async () => {
       recoveryPreview.value = true;
+      actionsOnly.value = false;
+      ownershipPreview.value = null;
       preview.value = await invoke<ChangePreview>('prepare_recovery');
       notice.value =
         'Подготовлено восстановление затронутых блоков. Проверьте список перед применением.';
@@ -369,6 +406,9 @@ export function useWorkspace() {
     automationDirty,
     hardwareEdits,
     startActions,
+    ownershipPreview,
+    actionsOnly,
+    reviewAutomation,
     setActionsEnabled,
     stage,
     undo,

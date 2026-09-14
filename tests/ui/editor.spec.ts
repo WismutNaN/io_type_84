@@ -199,7 +199,8 @@ test('gestures share the draft, undo, profile and native apply flow', async ({pa
       if(cmd!=='monitor_frame')w.calls.push({cmd,args});
       if(cmd==='connect_device')return snapshot;
       if(cmd==='set_monitor'){frame.active=args.enabled;return structuredClone(frame);}
-      if(cmd==='configure_automation')frame.rulesEnabled=args.enabled;
+      if(cmd==='configure_automation'){frame.rulesEnabled=args.enabled; frame.active=args.enabled;}
+      if(cmd==='prepare_automation')return {token:'ownership-preview', changes:[{block:'base',changedBytes:4},{block:'function',changedBytes:4}]};
       if(cmd==='monitor_frame')return structuredClone(frame);
       return null;
     }};
@@ -221,16 +222,19 @@ test('gestures share the draft, undo, profile and native apply flow', async ({pa
   await page.getByRole('button',{name:'Сохранить действие',exact:true}).click();
   await page.getByRole('button',{name:'Сохранить профиль',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('io.profiles.v1')!)[0]);
-  expect(saved.schemaVersion).toBe(2);expect(saved.automation.gestures).toHaveLength(2);
-  expect(saved.automation.gestures[1].slots).toEqual([49,50]);
+  expect(saved.schemaVersion).toBe(2);expect(saved.automation.gestures).toHaveLength(1);expect(saved.automation.depthChoices).toHaveLength(1);
+  expect(saved.automation.gestures[0].slots).toEqual([49,50]);
   await page.getByRole('button',{name:'Применить',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('Word');
+  await expect(page.getByRole('dialog')).toContainText('Передать клавиши приложению');
+  expect((await page.evaluate(()=>(window as any).calls)).some((c:any)=>c.cmd==='configure_automation')).toBe(false);
   await page.getByRole('button',{name:'Сохранить на компьютере',exact:true}).click();
   await expect(page.locator('.draft-summary')).toContainText('Жесты компьютера включены');
   const calls=await page.evaluate(()=>(window as any).calls);
   expect(calls.some((c:any)=>c.cmd==='apply_changes'||c.cmd==='prepare_changes')).toBe(false);
   const applied=calls.find((c:any)=>c.cmd==='configure_automation');
-  expect(applied.args.enabled).toBe(true);expect(applied.args.profile.gestures).toHaveLength(2);
+  expect(applied.args.enabled).toBe(true);expect(applied.args.profile.gestures).toHaveLength(1);expect(applied.args.profile.depthChoices).toHaveLength(1);
+  expect(applied.args.ownershipToken).toBe('ownership-preview');
   await page.getByRole('button',{name:'Каталог',exact:true}).click();
   await page.getByRole('button',{name:'Новое действие',exact:false}).click();
   await page.getByRole('textbox',{name:'Название действия',exact:true}).fill('Мой сценарий');

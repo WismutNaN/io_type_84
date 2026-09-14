@@ -47,9 +47,14 @@ function customBinding(slot: number) {
 }
 
 function actionLabel(slot: number, original: string) {
+  const choice = props.automation?.depthChoices.find((r) => r.slot === slot);
   const b = props.snapshot?.keys[slot]?.[props.functionLayer ? 'function' : 'base'];
-  if (!customBinding(slot)) return original;
-  const name = t(bindingName(b, original));
+  if (!choice && !customBinding(slot)) return original;
+  const name = t(
+    choice
+      ? catalogLabel(props.automation?.actions.find((a) => a.id === choice.lightActionId))
+      : bindingName(b, original),
+  );
   return (
     (
       {
@@ -62,7 +67,11 @@ function actionLabel(slot: number, original: string) {
     )[name] ?? name
   );
 }
+
 function deepLabel(slot: number) {
+  const choice = props.automation?.depthChoices.find((r) => r.slot === slot);
+  if (choice)
+    return catalogLabel(props.automation?.actions.find((a) => a.id === choice.deepActionId));
   const matches = props.automation?.gestures.filter((r) => r.slots.includes(slot)) ?? [];
   const first = matches[0];
   return first

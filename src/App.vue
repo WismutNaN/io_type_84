@@ -10,7 +10,7 @@ import KeyInspection from './features/editor/KeyInspection.vue';
 import MonitorStrip from './features/editor/MonitorStrip.vue';
 import DepthActions from './features/editor/DepthActions.vue';
 import ActionCatalog from './features/editor/ActionCatalog.vue';
-import { defaultAutomation } from './features/editor/computer-rules';
+import { defaultAutomation, hasRules } from './features/editor/computer-rules';
 import {
   effectGroups,
   effectDescriptions,
@@ -56,7 +56,15 @@ const {
   profiles,
   recoveryPreview,
 } = workspace;
-const { automation, automationDirty, hardwareEdits, startActions } = workspace;
+const {
+  automation,
+  automationDirty,
+  hardwareEdits,
+  startActions,
+  ownershipPreview,
+  actionsOnly,
+  reviewAutomation,
+} = workspace;
 const catalogTab = ref('computer');
 const page = ref('keyboard');
 const section = ref('keys'),
@@ -615,7 +623,7 @@ function modalKeys(event: KeyboardEvent) {
                       :disabled="
                         !native ||
                         !connected ||
-                        !workspace.appliedAutomation.value.gestures.length ||
+                        !hasRules(workspace.appliedAutomation.value) ||
                         !!busy
                       "
                       @change="
@@ -1030,22 +1038,32 @@ function modalKeys(event: KeyboardEvent) {
             }}
           </p>
           <div
-            v-if="!recoveryPreview && (automationDirty || automation.gestures.length)"
+            v-if="!recoveryPreview && (automationDirty || hasRules(reviewAutomation))"
             class="automation-preview"
           >
             <b>{{ t('На компьютере') }}</b>
             <p>
-              {{ automation.actions.length }} {{ t('действий') }} ·
-              {{ automation.gestures.length }} {{ t('жестов') }}
+              {{ reviewAutomation.actions.length }} {{ t('действий') }} ·
+              {{ reviewAutomation.gestures.length + reviewAutomation.depthChoices.length }}
+              {{ t('жестов') }}
             </p>
             <ul>
-              <li v-for="r in automation.gestures" :key="r.id">
+              <li v-for="r in reviewAutomation.gestures" :key="r.id">
                 {{ r.slots.map(keyLabel).join(' + ') }} · {{ r.thresholdUm / 1000 }} {{ t('мм')
                 }}{{ r.holdMs ? ' · ' + r.holdMs / 1000 + ' ' + t('с') : '' }} →
-                {{ t(automation.actions.find((a) => a.id === r.actionId)?.name ?? '') }}
+                {{ t(reviewAutomation.actions.find((a) => a.id === r.actionId)?.name ?? '') }}
+              </li>
+              <li v-for="r in reviewAutomation.depthChoices" :key="r.id">
+                {{ keyLabel(r.slot) }}:
+                {{ t(reviewAutomation.actions.find((a) => a.id === r.lightActionId)?.name ?? '') }}
+                /
+                {{ t(reviewAutomation.actions.find((a) => a.id === r.deepActionId)?.name ?? '') }} ·
+                {{ r.deepUm / 1000 }} {{ t('мм') }}
               </li>
             </ul>
-            <label v-if="native && connected && automation.gestures.length" class="switch-line"
+            <label
+              v-if="!actionsOnly && native && connected && hasRules(reviewAutomation)"
+              class="switch-line"
               ><span>{{ t('Включить жесты после применения') }}</span
               ><input v-model="startActions" type="checkbox"
             /></label>
@@ -1053,6 +1071,27 @@ function modalKeys(event: KeyboardEvent) {
               {{
                 t(
                   'Действия компьютера сохраняются в профиле приложения. Они не записываются в прошивку.',
+                )
+              }}
+            </p>
+          </div>
+          <div v-if="ownershipPreview && startActions" class="automation-preview">
+            <b>{{ t('Передать клавиши приложению') }}</b>
+            <p>
+              {{ reviewAutomation.depthChoices.map((r) => keyLabel(r.slot)).join(', ') }} ·
+              {{ t('Основной и Fn-слой') }}
+            </p>
+            <p class="hint">
+              {{
+                t(
+                  'Отпустите клавиши перед применением. Приложение временно отключит их штатные действия и будет выбирать результат по глубине. При остановке прежние назначения восстановятся.',
+                )
+              }}
+            </p>
+            <p class="hint">
+              {{
+                t(
+                  'Если процесс аварийно завершится или USB отключится, верните назначения кнопкой «Восстановить» после подключения.',
                 )
               }}
             </p>
@@ -1074,7 +1113,7 @@ function modalKeys(event: KeyboardEvent) {
           <p v-if="recoveryPreview" class="hint">
             {{ t('Восстанавливаются исходные данные этих блоков из последней резервной копии.') }}
           </p>
-          <p v-if="!preview.changes.length && !automationDirty">
+          <p v-if="!preview.changes.length && !automationDirty && !actionsOnly">
             {{ t('Отличий от устройства нет.') }}
           </p>
           <p v-if="error" class="dialog-error" role="alert">{{ error }}</p>
@@ -1083,14 +1122,18 @@ function modalKeys(event: KeyboardEvent) {
               {{ t('Вернуться') }}</button
             ><button
               class="primary"
-              :disabled="!!busy || (!preview.changes.length && !automationDirty)"
+              :disabled="!!busy || (!preview.changes.length && !automationDirty && !actionsOnly)"
               @click="workspace.apply()"
             >
               {{
                 t(
                   String(
                     busy ||
-                      (preview.changes.length ? 'Применить изменения' : 'Сохранить на компьютере'),
+                      (actionsOnly
+                        ? 'Включить выбор по глубине'
+                        : preview.changes.length
+                          ? 'Применить изменения'
+                          : 'Сохранить на компьютере'),
                   ),
                 )
               }}

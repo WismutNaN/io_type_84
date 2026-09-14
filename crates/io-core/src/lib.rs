@@ -5,3 +5,4 @@ pub mod keyboard;
 
 pub mod automation;
 pub mod depth;
+pub mod exclusive_depth;

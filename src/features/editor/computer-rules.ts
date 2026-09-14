@@ -33,6 +33,7 @@ export const defaultAutomation = (): AutomationProfile => ({
     },
   ],
   gestures: [],
+  depthChoices: [],
 });
 export function actionLabel(action: ActionDefinition | undefined): string {
   if (!action) return '—';
@@ -51,12 +52,14 @@ export function readAutomation(value: unknown): AutomationProfile {
     throw new Error('Проверьте каталог действий и условия жестов.');
   };
   if (!value || typeof value !== 'object') return fail();
-  const p = value as AutomationProfile;
+  const p = JSON.parse(JSON.stringify(value)) as AutomationProfile;
+  if (p.depthChoices === undefined) p.depthChoices = [];
   if (
     !Array.isArray(p.actions) ||
     !Array.isArray(p.gestures) ||
     p.actions.length > 256 ||
-    p.gestures.length > 256
+    !Array.isArray(p.depthChoices) ||
+    p.gestures.length + p.depthChoices.length > 256
   )
     return fail();
   const integer = (v: unknown, max: number) =>
@@ -133,6 +136,28 @@ export function readAutomation(value: unknown): AutomationProfile {
       return fail();
     gestures.add(r.id);
   }
+  const owned = new Set<number>();
+  for (const r of p.depthChoices) {
+    if (
+      !r ||
+      !id(r.id) ||
+      gestures.has(r.id) ||
+      !ids.has(r.lightActionId) ||
+      !ids.has(r.deepActionId) ||
+      !keyboardKeys.some((k) => k.slot === r.slot) ||
+      owned.has(r.slot) ||
+      !integer(r.lightUm, 3000) ||
+      r.lightUm < 300 ||
+      !integer(r.deepUm, 3200) ||
+      r.deepUm < r.lightUm + 100 ||
+      !integer(r.releaseUm, 2900) ||
+      r.releaseUm + 100 > r.lightUm ||
+      p.gestures.some((g) => g.slots.includes(r.slot))
+    )
+      return fail();
+    owned.add(r.slot);
+    gestures.add(r.id);
+  }
   return JSON.parse(JSON.stringify(p));
 }
 export function migrateDepthRules(value: unknown): AutomationProfile {
@@ -147,4 +172,38 @@ export function migrateDepthRules(value: unknown): AutomationProfile {
     actionId: r.action,
   }));
   return readAutomation(p);
+}
+
+export const hasRules = (p: AutomationProfile) => p.gestures.length + p.depthChoices.length > 0;
+export function pageDepthChoice(
+  profile: AutomationProfile,
+  slot: number,
+  deepActionId: string,
+  deepUm = 3000,
+  lightActionId?: string,
+  lightUm = 600,
+): AutomationProfile {
+  const next = readAutomation(profile);
+  const key = slot === 105 ? 75 : 78;
+  const id = `page-${slot}`;
+  if (!lightActionId && !next.actions.some((a) => a.id === id))
+    next.actions.push({
+      id,
+      name: slot === 105 ? 'Page Up' : 'Page Down',
+      platformCommands: emptyPlatforms(),
+      command: { kind: 'key', key, modifiers: 0 },
+    });
+  const existing = next.depthChoices.find((r) => r.slot === slot);
+  next.gestures = next.gestures.filter((g) => !g.slots.includes(slot));
+  next.depthChoices = next.depthChoices.filter((r) => r.slot !== slot);
+  next.depthChoices.push({
+    id: existing?.id ?? `depth-${slot}`,
+    slot,
+    lightUm,
+    deepUm,
+    releaseUm: 200,
+    lightActionId: lightActionId ?? id,
+    deepActionId,
+  });
+  return readAutomation(next);
 }

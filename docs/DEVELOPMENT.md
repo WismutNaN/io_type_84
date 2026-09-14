@@ -83,7 +83,21 @@ Raw Input без SET; `--run` требует интерактивного тер
 фазами, временно меняет base PgUp/PgDn, измеряет и восстанавливает snapshot.
 При ошибке измерения пытается восстановить назначения; при обрыве процесса/USB
 нужен сохранённый recovery-файл. Полного backup OS-mode/всех областей нет.
-Новая интерактивная процедура на железе ещё не пройдена. Не запускать автоматически.
+Интерактивная процедура пройдена: [приёмка](evidence/stock-capture-acceptance-v1.17.json). Аппаратные тесты не входят в CI.
 
 Доменный `MacroStep.kind`: 1 клавиатура, 3 мышь. Wire White 1.17: соответственно
 3 и 1. Это разные словари; преобразование выполняют encoder/decoder adapter.
+
+
+## Выбор light/deep
+
+[Контракт](../modules/exclusive-depth.md). `AutomationProfile.depthChoices` с serde
+и TS-миграцией отсутствующего поля. `prepare_automation(profile, baseRevision)`
+возвращает отдельный ChangePreview захвата; `configure_automation` принимает
+`ownershipToken`, включает monitor самостоятельно и восстанавливает назначения
+при выключении. Обычные аппаратные Edit и временный захват имеют разные планы.
+Исполнение не стартует от импорта/чтения. Долговременный фон пока не реализован.
+Журнал: `recovery/input-ownership.json`; снимки временных операций:
+`recovery/input-sessions/`, отдельно от пользовательской истории восстановления.
+`verify_depth_choice --run` использует production service и наблюдает отмеченный
+SendInput; его hook существует только в исследовательском executable.

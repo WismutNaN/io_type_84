@@ -22,7 +22,7 @@ pub fn execute(action: ComputerAction) -> Result<()> {
                 wScan: 0,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: 0,
+                dwExtraInfo: crate::INJECTED_INPUT_TAG,
             },
         },
     };

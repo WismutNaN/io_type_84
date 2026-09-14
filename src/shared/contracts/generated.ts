@@ -60,6 +60,8 @@ export type ActionDefinition = { id: string, name: string, command: ActionComman
 
 export type GestureRule = { id: string, slots: Array<number>, thresholdUm: number, releaseUm: number, holdMs: number, actionId: string, };
 
-export type AutomationProfile = { actions: Array<ActionDefinition>, gestures: Array<GestureRule>, };
+export type DepthChoice = { id: string, slot: number, lightUm: number, deepUm: number, releaseUm: number, lightActionId: string, deepActionId: string, };
+
+export type AutomationProfile = { actions: Array<ActionDefinition>, gestures: Array<GestureRule>, depthChoices: Array<DepthChoice>, };
 
 export type PlatformCommands = { windows: ActionCommand | null, linux: ActionCommand | null, macos: ActionCommand | null, };

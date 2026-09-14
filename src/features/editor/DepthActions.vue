@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import type { AutomationProfile, MonitorFrame } from '../../shared/contracts/generated';
 import { actionLabel } from './computer-rules';
+import ExclusiveDepthEditor from './ExclusiveDepthEditor.vue';
 import { sampleDepth } from './telemetry';
 import { t, mm } from '../../shared/ui/preferences';
 import TravelSlider from '../../shared/ui/TravelSlider.vue';
@@ -11,6 +12,13 @@ const props = defineProps<{
   live: MonitorFrame;
   disabled: boolean;
 }>();
+const mode = ref('exclusive');
+const canChoose = computed(
+  () => props.selected.length === 1 && [105, 108].includes(props.selected[0]!),
+);
+const isOwned = computed(() =>
+  props.profile.depthChoices.some((r) => props.selected.includes(r.slot)),
+);
 const emit = defineEmits<{ save: [profile: AutomationProfile]; catalog: [] }>();
 const threshold = ref(2400),
   hold = ref(1000),
@@ -72,61 +80,91 @@ function remove(id: string) {
 </script>
 <template>
   <section class="depth-actions">
-    <div class="field-heading">
-      <h3>{{ t('Жесты') }}</h3>
-      <span class="tag">{{ t('На компьютере') }}</span>
+    <div v-if="canChoose" class="segmented" aria-label="Режим действия">
+      <button :class="{ active: mode === 'exclusive' }" @click="mode = 'exclusive'">
+        {{ t('Лёгкое / глубокое') }}
+      </button>
+      <button :class="{ active: mode === 'additive' }" @click="mode = 'additive'">
+        {{ t('Добавочное действие') }}
+      </button>
     </div>
-    <div v-if="matches.length" class="gesture-list">
-      <div v-for="r in matches" :key="r.id" :class="{ chosen: editing === r.id }">
-        <button @click="edit(r.id)">
-          <span
-            >{{ mm(r.thresholdUm) }} {{ t('мм')
-            }}{{ r.holdMs ? ' · ' + r.holdMs / 1000 + ' ' + t('с') : '' }}</span
-          ><b>{{ t(actionLabel(profile.actions.find((a) => a.id === r.actionId))) }}</b>
-        </button>
-        <button class="text-button" :aria-label="t('Удалить жест')" @click="remove(r.id)">×</button>
+    <ExclusiveDepthEditor
+      v-if="canChoose && mode === 'exclusive'"
+      :slot="selected[0]!"
+      :profile="profile"
+      :live="live"
+      :disabled="disabled"
+      @save="emit('save', $event)"
+      @catalog="emit('catalog')"
+    />
+    <template v-else>
+      <div class="field-heading">
+        <h3>{{ t('Жесты') }}</h3>
+        <span class="tag">{{ t('На компьютере') }}</span>
       </div>
-      <button class="text-button" @click="reset">+ {{ t('Ещё жест') }}</button>
-    </div>
-    <fieldset :disabled="disabled || !selected.length || selected.length > 8">
-      <p v-if="selected.length > 1" class="hint">{{ t('Все выбранные клавиши одновременно') }}</p>
-      <TravelSlider v-model="threshold" label="Сработает на глубине" :min="300" :live="depth" />
-      <div class="segmented">
-        <button :class="{ active: threshold === 1200 }" @click="threshold = 1200">
-          {{ t('Неполное') }}</button
-        ><button :class="{ active: threshold === 3000 }" @click="threshold = 3000">
-          {{ t('Полное') }}
-        </button>
+      <div v-if="matches.length" class="gesture-list">
+        <div v-for="r in matches" :key="r.id" :class="{ chosen: editing === r.id }">
+          <button @click="edit(r.id)">
+            <span
+              >{{ mm(r.thresholdUm) }} {{ t('мм')
+              }}{{ r.holdMs ? ' · ' + r.holdMs / 1000 + ' ' + t('с') : '' }}</span
+            ><b>{{ t(actionLabel(profile.actions.find((a) => a.id === r.actionId))) }}</b>
+          </button>
+          <button class="text-button" :aria-label="t('Удалить жест')" @click="remove(r.id)">
+            ×
+          </button>
+        </div>
+        <button class="text-button" @click="reset">+ {{ t('Ещё жест') }}</button>
       </div>
-      <label class="switch-line"
-        ><span>{{ t('Удерживать') }}</span
-        ><input v-model="held" type="checkbox" role="switch"
-      /></label>
-      <label v-if="held"
-        >{{ t('Длительность') }} · {{ hold / 1000 }} {{ t('с')
-        }}<input
-          v-model.number="hold"
-          type="range"
-          min="250"
-          max="3000"
-          step="250"
-          :aria-label="t('Длительность')"
-      /></label>
-      <label
-        >{{ t('Действие')
-        }}<select v-model="actionId" :aria-label="t('Действие жеста')">
-          <option v-for="a in profile.actions" :key="a.id" :value="a.id">{{ t(a.name) }}</option>
-        </select></label
-      >
-      <div class="panel-actions">
-        <button class="text-button" @click="emit('catalog')">{{ t('Каталог действий') }}</button
-        ><button class="primary" :disabled="!actionId" @click="save">
-          {{ t('Сохранить действие') }}
-        </button>
-      </div>
-    </fieldset>
-    <p class="hint">
-      {{ t('Один раз за нажатие. Обычный ввод клавиш сохраняется. Требуются свежие данные хода.') }}
-    </p>
+      <p v-if="isOwned" class="hint">
+        {{
+          t(
+            'Эта клавиша уже выбирает одно из двух действий. Удалите выбор по глубине, чтобы добавить независимые жесты.',
+          )
+        }}
+      </p>
+      <fieldset :disabled="disabled || isOwned || !selected.length || selected.length > 8">
+        <p v-if="selected.length > 1" class="hint">{{ t('Все выбранные клавиши одновременно') }}</p>
+        <TravelSlider v-model="threshold" label="Сработает на глубине" :min="300" :live="depth" />
+        <div class="segmented">
+          <button :class="{ active: threshold === 1200 }" @click="threshold = 1200">
+            {{ t('Неполное') }}</button
+          ><button :class="{ active: threshold === 3000 }" @click="threshold = 3000">
+            {{ t('Полное') }}
+          </button>
+        </div>
+        <label class="switch-line"
+          ><span>{{ t('Удерживать') }}</span
+          ><input v-model="held" type="checkbox" role="switch"
+        /></label>
+        <label v-if="held"
+          >{{ t('Длительность') }} · {{ hold / 1000 }} {{ t('с')
+          }}<input
+            v-model.number="hold"
+            type="range"
+            min="250"
+            max="3000"
+            step="250"
+            :aria-label="t('Длительность')"
+        /></label>
+        <label
+          >{{ t('Действие')
+          }}<select v-model="actionId" :aria-label="t('Действие жеста')">
+            <option v-for="a in profile.actions" :key="a.id" :value="a.id">{{ t(a.name) }}</option>
+          </select></label
+        >
+        <div class="panel-actions">
+          <button class="text-button" @click="emit('catalog')">{{ t('Каталог действий') }}</button
+          ><button class="primary" :disabled="!actionId" @click="save">
+            {{ t('Сохранить действие') }}
+          </button>
+        </div>
+      </fieldset>
+      <p class="hint">
+        {{
+          t('Один раз за нажатие. Обычный ввод клавиш сохраняется. Требуются свежие данные хода.')
+        }}
+      </p>
+    </template>
   </section>
 </template>
