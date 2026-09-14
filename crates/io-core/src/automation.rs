@@ -1,7 +1,7 @@
 //! Каталог действий и жесты независимы от устройства, Win32 и хранения профилей.
 use crate::{
     depth::ComputerAction,
-    exclusive_depth::{ChoiceState, DepthChoice},
+    exclusive_depth::{ChoiceState, DepthChoice, RepeatSource, RepeatWindow},
     keyboard::{AppError, Result},
 };
 use serde::{Deserialize, Serialize};
@@ -65,6 +65,15 @@ pub struct AutomationProfile {
     pub gestures: Vec<GestureRule>,
     #[serde(default)]
     pub depth_choices: Vec<DepthChoice>,
+}
+pub fn repeatable_command(command: &ActionCommand) -> bool {
+    matches!(
+        command,
+        ActionCommand::Key { .. }
+            | ActionCommand::Media {
+                action: ComputerAction::VolumeUp | ComputerAction::VolumeDown
+            }
+    )
 }
 pub fn supported_key(key: u8) -> bool {
     matches!(key, 4..=69 | 73..=82 | 224..=231)
@@ -181,6 +190,30 @@ impl AutomationProfile {
         }
         let mut owned = BTreeSet::new();
         for r in &self.depth_choices {
+            if let Some(repeat) = &r.deep_repeat {
+                let action = self
+                    .actions
+                    .iter()
+                    .find(|a| a.id == r.deep_action_id)
+                    .ok_or_else(fail)?;
+                if !(100..=2000).contains(&repeat.delay_ms)
+                    || !(50..=1000).contains(&repeat.interval_ms)
+                    || !repeatable_command(&action.command)
+                    || [
+                        &action.platform_commands.windows,
+                        &action.platform_commands.linux,
+                        &action.platform_commands.macos,
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .any(|c| !repeatable_command(c))
+                {
+                    return Err(AppError::new(
+                        "invalidRepeat",
+                        "Повтор доступен для клавиш и регулировки громкости. Проверьте задержку и скорость.",
+                    ));
+                }
+            }
             if !valid_id(&r.id)
                 || !rule_ids.insert(&r.id)
                 || r.slot >= 128
@@ -211,6 +244,21 @@ pub struct GestureEngine {
     choices: Vec<ChoiceState>,
     pending: Vec<(u64, String)>,
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct TriggeredAction {
+    pub action_id: String,
+    pub repeat: Option<RepeatSource>,
+}
+impl From<&str> for TriggeredAction {
+    fn from(id: &str) -> Self {
+        Self {
+            action_id: id.into(),
+            repeat: None,
+        }
+    }
+}
+
 impl GestureEngine {
     pub fn new(profile: AutomationProfile) -> Self {
         let choices = (0..profile.depth_choices.len())
@@ -242,15 +290,31 @@ impl GestureEngine {
             *sample = Some((depth, now));
         }
     }
-    pub fn tick(&mut self, now: u64) -> Vec<String> {
-        for state in &mut self.choices {
-            state.expire(now);
-        }
+    pub fn repeat_windows(&self, now: u64) -> Vec<RepeatWindow> {
+        self.profile
+            .depth_choices
+            .iter()
+            .zip(&self.choices)
+            .filter_map(|(rule, state)| state.repeat_window(rule.slot, now))
+            .collect()
+    }
+    pub fn tick(&mut self, now: u64) -> Vec<TriggeredAction> {
         let mut fired = std::mem::take(&mut self.pending)
             .into_iter()
             .filter(|(time, _)| now >= *time && now - *time < 600)
-            .map(|(_, action)| action)
+            .map(|(_, action_id)| TriggeredAction {
+                action_id,
+                repeat: None,
+            })
             .collect::<Vec<_>>();
+        for (rule, state) in self.profile.depth_choices.iter().zip(&mut self.choices) {
+            if let Some(action_id) = state.tick(rule, now) {
+                fired.push(TriggeredAction {
+                    action_id,
+                    repeat: state.repeat_window(rule.slot, now).map(|w| w.source),
+                });
+            }
+        }
         for (rule, state) in self.profile.gestures.iter().zip(&mut self.states) {
             // Каждый член сочетания должен быть подтверждён свежим аналоговым пакетом.
             let samples: Option<Vec<_>> = rule
@@ -276,7 +340,7 @@ impl GestureEngine {
             if state.armed {
                 let since = *state.since.get_or_insert(now);
                 if now.saturating_sub(since) >= u64::from(rule.hold_ms) {
-                    fired.push(rule.action_id.clone());
+                    fired.push(rule.action_id.as_str().into());
                     state.armed = false;
                     state.since = None;
                 }
@@ -324,7 +388,7 @@ mod tests {
             }
             assert!(engine.tick(time).is_empty());
         }
-        assert_eq!(engine.tick(820), vec!["word"]);
+        assert_eq!(engine.tick(820), vec!["word".into()]);
         assert!(engine.tick(900).is_empty());
         engine.sample(49, 0, 950);
         engine.tick(950);
@@ -359,6 +423,7 @@ mod tests {
                 release_um: 200,
                 light_action_id: "tap".into(),
                 deep_action_id: "word".into(),
+                deep_repeat: None,
             })
             .collect();
         assert!(p.validate().is_ok());
@@ -368,10 +433,10 @@ mod tests {
         }
         e.sample(105, 800, 10);
         e.sample(108, 3980, 11);
-        assert_eq!(e.tick(11), ["word"]);
+        assert_eq!(e.tick(11), ["word".into()]);
         e.sample(108, 0, 12);
         e.sample(105, 0, 13);
-        assert_eq!(e.tick(13), ["tap"]);
+        assert_eq!(e.tick(13), ["tap".into()]);
         e.sample(105, 800, 14);
         e.sample(105, 0, 15);
         assert!(e.tick(1000).is_empty()); // queued output expires too
@@ -381,6 +446,81 @@ mod tests {
         p.gestures.clear();
         p.depth_choices[1].slot = 105;
         assert!(p.validate().is_err());
+    }
+    #[test]
+    fn repeat_requires_short_commands_on_every_platform_and_explicit_migration() {
+        use crate::exclusive_depth::HoldRepeat;
+        let mut p = profile();
+        p.gestures.clear();
+        p.depth_choices.push(DepthChoice {
+            id: "depth".into(),
+            slot: 105,
+            light_um: 600,
+            deep_um: 3000,
+            release_um: 200,
+            light_action_id: "word".into(),
+            deep_action_id: "word".into(),
+            deep_repeat: Some(HoldRepeat {
+                delay_ms: 350,
+                interval_ms: 80,
+            }),
+        });
+        assert!(p.validate().is_err()); // launch is allowed once, not on repeat
+        p.actions[0].command = ActionCommand::Media {
+            action: ComputerAction::VolumeUp,
+        };
+        assert!(p.validate().is_ok());
+        p.actions[0].platform_commands.macos = Some(ActionCommand::Media {
+            action: ComputerAction::Mute,
+        });
+        assert!(p.validate().is_err());
+        p.actions[0].platform_commands.macos = None;
+        p.depth_choices[0].deep_repeat.as_mut().unwrap().interval_ms = 0;
+        assert!(p.validate().is_err());
+        let mut old = serde_json::to_value(&p).unwrap();
+        old["depthChoices"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("deepRepeat");
+        let migrated: AutomationProfile = serde_json::from_value(old).unwrap();
+        assert_eq!(migrated.depth_choices[0].deep_repeat, None);
+        assert!(migrated.validate().is_ok());
+    }
+    #[test]
+    fn repeat_output_has_a_source_that_cannot_survive_release_or_resume() {
+        use crate::exclusive_depth::HoldRepeat;
+        let mut p = profile();
+        p.gestures.clear();
+        p.actions[0].command = ActionCommand::Media {
+            action: ComputerAction::VolumeDown,
+        };
+        p.depth_choices.push(DepthChoice {
+            id: "depth".into(),
+            slot: 108,
+            light_um: 600,
+            deep_um: 3000,
+            release_um: 200,
+            light_action_id: "word".into(),
+            deep_action_id: "word".into(),
+            deep_repeat: Some(HoldRepeat {
+                delay_ms: 100,
+                interval_ms: 50,
+            }),
+        });
+        let mut e = GestureEngine::new(p);
+        e.sample(108, 0, 0);
+        e.sample(108, 3500, 1);
+        assert_eq!(e.tick(1), ["word".into()]);
+        e.sample(108, 3500, 90);
+        let repeat = e.tick(101).remove(0).repeat.unwrap();
+        assert_eq!(e.repeat_windows(101)[0].source, repeat);
+        e.sample(108, 2700, 110);
+        assert!(e.repeat_windows(110).is_empty());
+        e.sample(108, 3500, 120);
+        assert_ne!(e.repeat_windows(120)[0].source, repeat);
+        e.sample(108, 0, 130);
+        assert!(e.repeat_windows(130).is_empty());
+        assert!(e.tick(131).is_empty());
     }
     #[test]
     fn references_and_unbounded_actions_are_rejected() {

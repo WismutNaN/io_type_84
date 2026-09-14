@@ -38,3 +38,29 @@ test('exclusive depth references survive export; conflicts and invalid threshold
   const old:any = defaultAutomation(); delete old.depthChoices;
   assert.deepEqual(readAutomation(old).depthChoices,[]);
 });
+
+test('repeat defaults only for new short actions; old choices and explicit off remain single-shot', () => {
+  const p = pageDepthChoice(defaultAutomation(),105,'volumeUp');
+  assert.deepEqual(p.depthChoices[0]!.deepRepeat,{delayMs:350,intervalMs:80});
+  const legacy:any = structuredClone(p); delete legacy.depthChoices[0].deepRepeat;
+  const migrated = readAutomation(legacy);
+  assert.equal(migrated.depthChoices[0]!.deepRepeat,null);
+  assert.equal(pageDepthChoice(migrated,105,'volumeUp').depthChoices[0]!.deepRepeat,null);
+  const off = pageDepthChoice(p,105,'volumeUp',3000,undefined,600,null);
+  assert.equal(off.depthChoices[0]!.deepRepeat,null);
+  assert.equal(pageDepthChoice(defaultAutomation(),108,'word').depthChoices[0]!.deepRepeat,null);
+  const custom = pageDepthChoice(off,105,'volumeUp',3000,undefined,600,{delayMs:1200,intervalMs:200});
+  assert.deepEqual(readAutomation(custom),custom);
+});
+
+test('repeat rejects invalid timing and toggles, macros or launches in any OS variant', () => {
+  const p = pageDepthChoice(defaultAutomation(),105,'volumeUp');
+  for (const value of [false,{},[],{delayMs:99,intervalMs:80},{delayMs:350,intervalMs:0},{delayMs:350,intervalMs:80.5}]) {
+    const bad:any = structuredClone(p); bad.depthChoices[0].deepRepeat = value;
+    assert.throws(()=>readAutomation(bad));
+  }
+  for (const command of [{kind:'media',action:'mute'},{kind:'application',application:'word'},{kind:'macro',steps:[{kind:'delay',ms:100}]}]) {
+    const bad:any = structuredClone(p); bad.actions[0].platformCommands.linux = command;
+    assert.throws(()=>readAutomation(bad));
+  }
+});

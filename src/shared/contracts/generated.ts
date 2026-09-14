@@ -60,7 +60,9 @@ export type ActionDefinition = { id: string, name: string, command: ActionComman
 
 export type GestureRule = { id: string, slots: Array<number>, thresholdUm: number, releaseUm: number, holdMs: number, actionId: string, };
 
-export type DepthChoice = { id: string, slot: number, lightUm: number, deepUm: number, releaseUm: number, lightActionId: string, deepActionId: string, };
+export type DepthChoice = { id: string, slot: number, lightUm: number, deepUm: number, releaseUm: number, lightActionId: string, deepActionId: string, deepRepeat: HoldRepeat | null, };
+
+export type HoldRepeat = { delayMs: number, intervalMs: number, };
 
 export type AutomationProfile = { actions: Array<ActionDefinition>, gestures: Array<GestureRule>, depthChoices: Array<DepthChoice>, };
 

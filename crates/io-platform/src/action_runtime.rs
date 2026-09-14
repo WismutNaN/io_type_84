@@ -1,7 +1,9 @@
 //! Очередь действий компьютера отдельно от HID; отмена освобождает синтетические клавиши.
 use crate::monitor::MonitorState;
+use crate::repeat_queue::RepeatQueue;
 use io_core::{
     automation::{ActionCommand, ActionStep, ApplicationId},
+    exclusive_depth::{RepeatSource, RepeatWindow},
     keyboard::{AppError, Result},
 };
 use std::sync::{
@@ -11,17 +13,42 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 
+struct QueuedAction {
+    epoch: u64,
+    queued_at: Instant,
+    command: ActionCommand,
+    repeat: Option<RepeatSource>,
+}
 pub struct ActionRuntime {
-    sender: SyncSender<(u64, Instant, ActionCommand)>,
+    sender: SyncSender<QueuedAction>,
     generation: Arc<AtomicU64>,
+    repeats: Arc<Mutex<RepeatQueue>>,
 }
 impl ActionRuntime {
     pub fn new(monitor: Arc<Mutex<MonitorState>>) -> Self {
-        let (sender, receiver) = mpsc::sync_channel::<(u64, Instant, ActionCommand)>(16);
+        let (sender, receiver) = mpsc::sync_channel::<QueuedAction>(16);
         let generation = Arc::new(AtomicU64::new(0));
         let version = Arc::clone(&generation);
+        let repeats = Arc::new(Mutex::new(RepeatQueue::default()));
+        let repeat_worker = Arc::clone(&repeats);
         std::thread::spawn(move || {
-            while let Ok((epoch, queued_at, command)) = receiver.recv() {
+            while let Ok(QueuedAction {
+                epoch,
+                queued_at,
+                command,
+                repeat,
+            }) = receiver.recv()
+            {
+                if let Some(source) = repeat
+                    && !repeat_worker.lock().expect("repeat queue").take(
+                        epoch,
+                        source,
+                        queued_at,
+                        Instant::now(),
+                    )
+                {
+                    continue;
+                }
                 let cancelled = || version.load(Ordering::SeqCst) != epoch;
                 if cancelled() {
                     continue;
@@ -49,24 +76,57 @@ impl ActionRuntime {
                 }
             }
         });
-        Self { sender, generation }
+        Self {
+            sender,
+            generation,
+            repeats,
+        }
     }
     pub fn cancel(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);
     }
-    pub fn submit(&self, command: ActionCommand) -> Result<()> {
-        self.sender
-            .try_send((
-                self.generation.load(Ordering::SeqCst),
-                Instant::now(),
-                command,
-            ))
-            .map_err(|_| {
-                AppError::new(
-                    "actionQueueFull",
-                    "Очередь действий заполнена. Действия остановлены.",
-                )
-            })
+    pub fn refresh_repeats(&self, windows: Vec<RepeatWindow>) {
+        self.repeats
+            .lock()
+            .expect("repeat queue")
+            .refresh(windows, Instant::now());
+    }
+    pub fn submit(&self, command: ActionCommand, repeat: Option<RepeatSource>) -> Result<()> {
+        let epoch = self.generation.load(Ordering::SeqCst);
+        let queued_at = Instant::now();
+        if let Some(source) = repeat
+            && !self
+                .repeats
+                .lock()
+                .expect("repeat queue")
+                .reserve(epoch, source, queued_at)
+        {
+            return Ok(());
+        }
+        let result = self.sender.try_send(QueuedAction {
+            epoch,
+            queued_at,
+            command,
+            repeat,
+        });
+        if let Some(source) = repeat {
+            if result.is_err() {
+                self.repeats
+                    .lock()
+                    .expect("repeat queue")
+                    .discard(epoch, source);
+            }
+            // A busy executor skips a repeat instead of building a backlog behind a macro.
+            if matches!(result, Err(mpsc::TrySendError::Full(_))) {
+                return Ok(());
+            }
+        }
+        result.map_err(|_| {
+            AppError::new(
+                "actionQueueFull",
+                "Очередь действий заполнена. Действия остановлены.",
+            )
+        })
     }
 }
 impl Drop for ActionRuntime {

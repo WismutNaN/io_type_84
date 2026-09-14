@@ -497,5 +497,11 @@
   "Отпустите клавиши перед применением. Приложение временно отключит их штатные действия и будет выбирать результат по глубине. При остановке прежние назначения восстановятся.": "Release the keys before applying. The app will temporarily disable their firmware actions and choose the output by depth. Stopping restores the previous bindings.",
   "Если процесс аварийно завершится или USB отключится, верните назначения кнопкой «Восстановить» после подключения.": "After a crash or USB disconnection, reconnect and use Restore to recover the previous bindings.",
   "Включить выбор по глубине": "Enable depth choice",
-  "Выбор по глубине включён. Отпустите клавиши перед первым нажатием.": "Depth choice enabled. Release the keys before the first press."
+  "Выбор по глубине включён. Отпустите клавиши перед первым нажатием.": "Depth choice enabled. Release the keys before the first press.",
+  "Повторять при удержании": "Repeat while held",
+  "Скорость повтора": "Repeat speed",
+  "Медленно": "Slow",
+  "Обычно": "Normal",
+  "Быстро": "Fast",
+  "Пауза перед повтором": "Delay before repeat"
 }

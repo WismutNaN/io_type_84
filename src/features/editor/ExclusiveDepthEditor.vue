@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { AutomationProfile, MonitorFrame } from '../../shared/contracts/generated';
-import { pageDepthChoice } from './computer-rules';
+import { pageDepthChoice, repeatableAction } from './computer-rules';
 import { sampleDepth } from './telemetry';
 import { t } from '../../shared/ui/preferences';
 import TravelSlider from '../../shared/ui/TravelSlider.vue';
@@ -16,7 +16,10 @@ const current = computed(() => props.profile.depthChoices.find((r) => r.slot ===
 const light = ref(600),
   deep = ref(3000),
   lightAction = ref(''),
-  deepAction = ref('');
+  deepAction = ref(''),
+  repeat = ref(true),
+  delay = ref(350),
+  interval = ref(80);
 watch(
   [() => props.slot, current],
   () => {
@@ -25,12 +28,18 @@ watch(
     lightAction.value = current.value?.lightActionId ?? '';
     deepAction.value =
       current.value?.deepActionId ?? (props.slot === 105 ? 'volumeUp' : 'volumeDown');
+    repeat.value = current.value ? !!current.value.deepRepeat : true;
+    delay.value = current.value?.deepRepeat?.delayMs ?? 350;
+    interval.value = current.value?.deepRepeat?.intervalMs ?? 80;
   },
   { immediate: true },
 );
 watch(light, (value) => {
   if (deep.value < value + 100) deep.value = value + 100;
 });
+const canRepeat = computed(() =>
+  repeatableAction(props.profile.actions.find((a) => a.id === deepAction.value)),
+);
 const depth = computed(() => sampleDepth(props.live, props.slot));
 const conflicts = computed(
   () => props.profile.gestures.filter((g) => g.slots.includes(props.slot)).length,
@@ -45,6 +54,7 @@ function save() {
       deep.value,
       lightAction.value || undefined,
       light.value,
+      repeat.value && canRepeat.value ? { delayMs: delay.value, intervalMs: interval.value } : null,
     ),
   );
 }
@@ -83,6 +93,38 @@ function remove() {
     <p class="hint">
       {{ t('Сразу на пороге. Лёгкое действие отменяется до следующего нажатия.') }}
     </p>
+    <label v-if="canRepeat" class="switch-line"
+      ><span>{{ t('Повторять при удержании') }}</span
+      ><input v-model="repeat" type="checkbox" role="switch"
+    /></label>
+    <details v-if="canRepeat && repeat">
+      <summary>{{ t('Скорость повтора') }}</summary>
+      <div class="segmented">
+        <button
+          v-for="speed in [
+            { label: 'Медленно', ms: 160 },
+            { label: 'Обычно', ms: 80 },
+            { label: 'Быстро', ms: 50 },
+          ]"
+          :key="speed.ms"
+          :class="{ active: interval === speed.ms }"
+          :aria-pressed="interval === speed.ms"
+          @click="interval = speed.ms"
+        >
+          {{ t(speed.label) }}
+        </button>
+      </div>
+      <label
+        >{{ t('Пауза перед повтором') }} · {{ delay }} {{ t('мс')
+        }}<input
+          v-model.number="delay"
+          type="range"
+          min="100"
+          max="2000"
+          step="50"
+          :aria-label="t('Пауза перед повтором')"
+      /></label>
+    </details>
     <details>
       <summary>{{ t('Чувствительность лёгкого нажатия') }}</summary>
       <TravelSlider v-model="light" label="Начало нажатия" :min="300" :max="3000" :live="depth" />

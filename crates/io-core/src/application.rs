@@ -36,6 +36,7 @@ pub fn typescript_contracts() -> String {
         ActionDefinition::decl(&config),
         GestureRule::decl(&config),
         crate::exclusive_depth::DepthChoice::decl(&config),
+        crate::exclusive_depth::HoldRepeat::decl(&config),
         AutomationProfile::decl(&config),
         PlatformCommands::decl(&config),
     ] {

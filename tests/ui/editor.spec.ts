@@ -9,11 +9,28 @@ test('all 84 keys, selection, depth actions, languages and themes fit supported 
   await page.goto('/');
   await page.getByRole('button', { name: 'Открыть пример', exact: true }).click();
   await page.locator('[data-slot="105"]').click();
+  const repeatSwitch = page.getByRole('switch', {name:'Повторять при удержании'});
+  await expect(repeatSwitch).toBeChecked();
+  await page.getByText('Скорость повтора',{exact:true}).click();
+  await page.getByRole('button',{name:'Медленно',exact:true}).click();
+  await page.getByRole('slider',{name:'Пауза перед повтором',exact:true}).fill('500');
   await page.getByRole('button', { name: 'Сохранить действие', exact: true }).click();
   await expect(page.locator('[data-slot="105"]')).toContainText('Vol +');
   await page.locator('[data-slot="108"]').click();
   await page.getByRole('button', { name: 'Сохранить действие', exact: true }).click();
   await expect(page.locator('[data-slot="108"]')).toContainText('Vol −');
+  await page.locator('[data-slot="105"]').click();
+  await expect(repeatSwitch).toBeChecked();
+  await expect(page.getByRole('button',{name:'Медленно',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('slider',{name:'Пауза перед повтором',exact:true})).toHaveValue('500');
+  await repeatSwitch.uncheck();
+  await page.getByRole('button', {name:'Сохранить действие',exact:true}).click();
+  await page.locator('[data-slot="108"]').click();
+  await page.locator('[data-slot="105"]').click();
+  await expect(repeatSwitch).not.toBeChecked();
+  await repeatSwitch.check();
+  await page.getByRole('button', {name:'Сохранить действие',exact:true}).click();
+  await page.getByText('Скорость повтора',{exact:true}).click();
   for (const size of [
     { width: 1480, height: 908 },
     { width: 960, height: 668 },

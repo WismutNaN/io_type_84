@@ -1059,6 +1059,10 @@ function modalKeys(event: KeyboardEvent) {
                 /
                 {{ t(reviewAutomation.actions.find((a) => a.id === r.deepActionId)?.name ?? '') }} ·
                 {{ r.deepUm / 1000 }} {{ t('мм') }}
+                <span v-if="r.deepRepeat">
+                  · {{ t('Повторять при удержании') }} ({{ r.deepRepeat.delayMs }} /
+                  {{ r.deepRepeat.intervalMs }} {{ t('мс') }})</span
+                >
               </li>
             </ul>
             <label

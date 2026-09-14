@@ -1,6 +1,9 @@
 //! End-to-end stock capture -> FB -> production engine/runtime -> observed Windows output.
 //! The diagnostic hook only counts four codes and always calls the next hook.
 #![cfg_attr(windows, allow(unsafe_code))]
+#[cfg(windows)]
+#[path = "support/audio_probe.rs"]
+mod audio_probe;
 #[cfg(not(windows))]
 fn main() {
     eprintln!("Windows only");
@@ -8,10 +11,11 @@ fn main() {
 
 #[cfg(windows)]
 mod test {
+    use super::audio_probe::{AudioProbe, VolumeTrace};
     use io_core::{
         automation::{ActionCommand, ActionDefinition, AutomationProfile, PlatformCommands},
         depth::ComputerAction,
-        exclusive_depth::DepthChoice,
+        exclusive_depth::{DepthChoice, HoldRepeat},
     };
     use io_platform::{INJECTED_INPUT_TAG, service::KeyboardService};
     use std::{
@@ -120,6 +124,10 @@ mod test {
                     release_um: 200,
                     light_action_id: light.into(),
                     deep_action_id: deep.into(),
+                    deep_repeat: Some(HoldRepeat {
+                        delay_ms: 350,
+                        interval_ms: 80,
+                    }),
                 })
                 .collect(),
         }
@@ -140,6 +148,12 @@ mod test {
         if !std::io::stdin().is_terminal() {
             return Err("Interactive terminal required".into());
         }
+        // Fail before taking any keys if the actual Windows volume cannot be observed.
+        let audio = AudioProbe::new()?;
+        println!(
+            "Системная громкость: {}",
+            serde_json::to_string(&audio.read()?)?
+        );
         let finished = Arc::new(AtomicBool::new(false));
         let end = finished.clone();
         let heartbeat = service.clone();
@@ -184,21 +198,45 @@ mod test {
                 "Проверка ГОТОВОГО режима. Отпустите клавиши. После Enter приложение временно заберёт PgUp/PgDn и начнёт выбирать действия по глубине.",
             )?;
             service.configure_automation(profile, true, Some(plan.token))?;
-            for (name, instruction) in [
+            for (name, seconds, instruction) in [
                 (
                     "light",
-                    "15 секунд: несколько раз МЯГКО нажмите и отпустите PgUp/PgDn, не до упора. Ожидаются только Page Up / Page Down.",
+                    10,
+                    "10 секунд: несколько раз МЯГКО нажмите и отпустите PgUp/PgDn, не до упора. Ожидаются только Page Up / Page Down, без изменения громкости.",
                 ),
                 (
-                    "deep",
-                    "15 секунд: несколько раз нажмите PgUp/PgDn ДО УПОРА, подержите и полностью отпустите. Ожидается только громкость, один шаг за нажатие.",
+                    "deepDown",
+                    8,
+                    "8 секунд: нажмите только PgDn ДО УПОРА, удерживайте 2 секунды, отпустите. Повторите ещё раз. Громкость должна снижаться всё время удержания; Page Down не вызывается.",
+                ),
+                (
+                    "releasedAfterDown",
+                    2,
+                    "Отпустите PgUp/PgDn. После Enter 2 секунды ничего не нажимайте. Проверяем, что повтор прекратился.",
+                ),
+                (
+                    "deepUp",
+                    8,
+                    "8 секунд: нажмите только PgUp ДО УПОРА, удерживайте 2 секунды, отпустите. Повторите ещё раз. Громкость должна повышаться всё время удержания; Page Up не вызывается.",
+                ),
+                (
+                    "releasedAfterUp",
+                    2,
+                    "Отпустите PgUp/PgDn. После Enter 2 секунды ничего не нажимайте. Проверяем остановку повтора, затем восстановим назначения.",
                 ),
             ] {
                 ready(instruction)?;
+                let mut volumes = VolumeTrace::default();
+                volumes.observe(audio.read()?)?;
                 clear();
+                println!("НАЧАЛО: {name}. Осталось {seconds} с.");
                 let start = Instant::now();
+                let mut next_audio = Duration::ZERO;
+                let mut next_status = Duration::ZERO;
                 let mut peak = [0; 2];
-                while start.elapsed() < Duration::from_secs(15) {
+                let mut released = [false; 2];
+                let firings_before = service.monitor_frame().rule_firings;
+                while start.elapsed() < Duration::from_secs(seconds) {
                     let frame = service.monitor_frame();
                     if let Some(error) = frame.rule_error {
                         return Err(error.into());
@@ -213,12 +251,40 @@ mod test {
                             .find(|s| s.slot == *slot && s.age_ms < 600)
                         {
                             peak[i] = peak[i].max(sample.travel_um);
+                            if sample.age_ms < 100 && sample.travel_um <= 200 {
+                                released[i] = true;
+                            }
                         }
+                    }
+                    if start.elapsed() >= next_audio {
+                        let readings = audio.read()?;
+                        if start.elapsed() >= next_status {
+                            println!(
+                                "{} с · громкость {} · наши нажатия {:?}",
+                                seconds.saturating_sub(start.elapsed().as_secs()),
+                                readings
+                                    .iter()
+                                    .map(|(role, r)| format!(
+                                        "{role}: {:.0}%{}",
+                                        r.percent,
+                                        if r.muted { " (без звука)" } else { "" }
+                                    ))
+                                    .collect::<Vec<_>>()
+                                    .join(", "),
+                                DOWN.iter()
+                                    .map(|c| c.load(Ordering::Relaxed))
+                                    .collect::<Vec<_>>()
+                            );
+                            next_status = start.elapsed() + Duration::from_secs(1);
+                        }
+                        volumes.observe(readings)?;
+                        next_audio = start.elapsed() + Duration::from_millis(100);
                     }
                     std::thread::sleep(Duration::from_millis(10));
                 }
-                let result = serde_json::json!({"phase":name,"outputs":counts(),"peakUm":peak,"runtime":service.monitor_frame().rule_firings});
-                println!("{result}");
+                volumes.observe(audio.read()?)?;
+                let result = serde_json::json!({"phase":name,"outputs":counts(),"peakUm":peak,"measuredRelease":released,"runtimeDelta":service.monitor_frame().rule_firings.saturating_sub(firings_before),"systemVolume":volumes});
+                println!("Этап завершён. Отпустите клавиши.\n{result}");
                 phases.push(result);
             }
             Ok(())
@@ -231,12 +297,13 @@ mod test {
         let after = service.connect()?;
         service.disconnect()?;
         let restored = before.revision == after.revision;
-        let result = serde_json::json!({"schemaVersion":1,"beforeRevision":before.revision,"afterRevision":after.revision,"restored":restored,"phases":phases,"measurementError":measurement.as_ref().err().map(ToString::to_string),"source":"production KeyboardService / GestureEngine / ActionRuntime; non-consuming Windows hook"});
-        std::fs::write(
-            "archive_data/session_snapshots/depth-choice-hardware.json",
-            serde_json::to_vec_pretty(&result)?,
-        )?;
-        println!("{result}");
+        let result = serde_json::json!({"schemaVersion":2,"beforeRevision":before.revision,"afterRevision":after.revision,"restored":restored,"phases":phases,"repeat":{"delayMs":350,"intervalMs":80},"measurementError":measurement.as_ref().err().map(ToString::to_string),"source":"production KeyboardService / GestureEngine / ActionRuntime; non-consuming Windows hook; read-only Core Audio console/multimedia endpoint volume"});
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_millis();
+        let output = format!("archive_data/session_snapshots/depth-repeat-{stamp}.json");
+        std::fs::write(&output, serde_json::to_vec_pretty(&result)?)?;
+        println!("{result}\nРезультат: {output}");
         if !restored {
             return Err("Snapshot restoration mismatch".into());
         }

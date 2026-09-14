@@ -1,5 +1,7 @@
 import type {
   ActionDefinition,
+  ActionCommand,
+  HoldRepeat,
   AutomationProfile,
   DepthRule,
 } from '../../shared/contracts/generated';
@@ -44,6 +46,12 @@ export function actionLabel(action: ActionDefinition | undefined): string {
     );
   return action.name;
 }
+export const repeatableCommand = (c: ActionCommand) =>
+  c.kind === 'key' || (c.kind === 'media' && ['volumeUp', 'volumeDown'].includes(c.action));
+export const repeatableAction = (a: ActionDefinition | undefined) =>
+  !!a &&
+  repeatableCommand(a.command) &&
+  Object.values(a.platformCommands).every((c) => c === null || repeatableCommand(c));
 export const supportedKey = (key: number) =>
   Number.isInteger(key) &&
   ((key >= 4 && key <= 69) || (key >= 73 && key <= 82) || (key >= 224 && key <= 231));
@@ -138,6 +146,17 @@ export function readAutomation(value: unknown): AutomationProfile {
   }
   const owned = new Set<number>();
   for (const r of p.depthChoices) {
+    if (!r || typeof r !== 'object') return fail();
+    if (r.deepRepeat === undefined) r.deepRepeat = null;
+    if (
+      r.deepRepeat !== null &&
+      (!integer(r.deepRepeat.delayMs, 2000) ||
+        r.deepRepeat.delayMs < 100 ||
+        !integer(r.deepRepeat.intervalMs, 1000) ||
+        r.deepRepeat.intervalMs < 50 ||
+        !repeatableAction(p.actions.find((a) => a.id === r.deepActionId)))
+    )
+      return fail();
     if (
       !r ||
       !id(r.id) ||
@@ -182,6 +201,7 @@ export function pageDepthChoice(
   deepUm = 3000,
   lightActionId?: string,
   lightUm = 600,
+  deepRepeat?: HoldRepeat | null,
 ): AutomationProfile {
   const next = readAutomation(profile);
   const key = slot === 105 ? 75 : 78;
@@ -204,6 +224,15 @@ export function pageDepthChoice(
     releaseUm: 200,
     lightActionId: lightActionId ?? id,
     deepActionId,
+    deepRepeat:
+      deepRepeat === undefined
+        ? (existing?.deepRepeat ??
+          (existing
+            ? null
+            : repeatableAction(next.actions.find((a) => a.id === deepActionId))
+              ? { delayMs: 350, intervalMs: 80 }
+              : null))
+        : deepRepeat,
   });
   return readAutomation(next);
 }

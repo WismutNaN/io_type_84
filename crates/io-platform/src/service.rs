@@ -555,14 +555,24 @@ fn dispatch_actions(
     state: &mut MonitorState,
     now: u64,
 ) {
-    for id in rules.tick(now) {
-        if let Some(action) = rules.profile.actions.iter().find(|a| a.id == id) {
+    let fired = rules.tick(now);
+    runtime.refresh_repeats(rules.repeat_windows(now));
+    for event in fired {
+        if let Some(action) = rules
+            .profile
+            .actions
+            .iter()
+            .find(|a| a.id == event.action_id)
+        {
             let variant = match std::env::consts::OS {
                 "linux" => &action.platform_commands.linux,
                 "macos" => &action.platform_commands.macos,
                 _ => &action.platform_commands.windows,
             };
-            if let Err(e) = runtime.submit(variant.as_ref().unwrap_or(&action.command).clone()) {
+            if let Err(e) = runtime.submit(
+                variant.as_ref().unwrap_or(&action.command).clone(),
+                event.repeat,
+            ) {
                 state.rule_error = Some(e.message);
                 state.rules_enabled = false;
                 runtime.cancel();

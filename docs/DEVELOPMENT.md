@@ -101,3 +101,15 @@ Raw Input без SET; `--run` требует интерактивного тер
 `recovery/input-sessions/`, отдельно от пользовательской истории восстановления.
 `verify_depth_choice --run` использует production service и наблюдает отмеченный
 SendInput; его hook существует только в исследовательском executable.
+
+`DepthChoice.deepRepeat` — nullable `HoldRepeat {delayMs, intervalMs}`. Отсутствующее
+поле читается как `null`; текущая версия профиля остаётся 2. Старые выборы не начинают
+повторяться автоматически. Runtime-событие `TriggeredAction` несёт отдельно источник
+повтора; его цикл/свежесть проверяются перед исполнением, в сериализованный профиль
+эти runtime-идентификаторы не попадают. Подробнее — [модуль](../modules/exclusive-depth.md).
+
+Подготовка следующего ручного теста: `cargo build -p io-platform --example verify_depth_choice`.
+Запуск из интерактивного PowerShell, когда владелец готов: `cargo run -p io-platform --example verify_depth_choice -- --run`.
+Новый диагностический observer читает системную громкость через dev-only `windows`
+Core Audio; production media adapter по-прежнему SendInput. При отсутствии аудиовыхода
+тест отказывается захватывать клавиши. Без `--run` только чтение и diff.

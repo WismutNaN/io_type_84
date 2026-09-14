@@ -1,0 +1,83 @@
+{
+  "afterRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+  "beforeRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+  "measurementError": null,
+  "phases": [
+    {
+      "outputs": {
+        "down": [
+          6,
+          16,
+          0,
+          0
+        ],
+        "order": [
+          "PageUp",
+          "PageDown",
+          "VolumeUp",
+          "VolumeDown"
+        ],
+        "otherTargetEvents": 0,
+        "up": [
+          6,
+          16,
+          0,
+          0
+        ]
+      },
+      "peakUm": [
+        2270,
+        2500
+      ],
+      "phase": "light",
+      "runtime": 27
+    },
+    {
+      "outputs": {
+        "down": [
+          0,
+          0,
+          3,
+          2
+        ],
+        "order": [
+          "PageUp",
+          "PageDown",
+          "VolumeUp",
+          "VolumeDown"
+        ],
+        "otherTargetEvents": 0,
+        "up": [
+          0,
+          0,
+          3,
+          2
+        ]
+      },
+      "peakUm": [
+        3970,
+        3980
+      ],
+      "phase": "deep",
+      "runtime": 32
+    }
+  ],
+  "restored": true,
+  "schemaVersion": 1,
+  "source": "production KeyboardService / GestureEngine / ActionRuntime; non-consuming Windows hook",
+  "recordedAt": "2026-09-14T22:31:26+05:00",
+  "implementationCommit": "e217e04",
+  "device": "IO Type 84 Magnetic White 1.17",
+  "assessment": {
+    "exclusiveWindowsOutputObserved": true,
+    "repeatImplementedInThisRun": false,
+    "actualSystemVolumeMeasured": false,
+    "ownerReport": "Громкость при этом тесте не переключалась; ожидался повтор при удержании.",
+    "limits": [
+      "Наблюдение собственных SendInput не доказывает изменение системного уровня громкости или слышимый результат.",
+      "runtime — накопительный счётчик, включает действия между этапами; outputs — счётчики конкретного этапа.",
+      "Восстановление сравнивает девять блоков snapshot; не является полным backup firmware, OS-mode или калибровки.",
+      "Новая реализация deepRepeat этим прогоном не проверялась."
+    ]
+  }
+}

@@ -21,6 +21,7 @@ pub fn application_info() -> AppInfo {
 
 mod action_runtime;
 mod computer;
+mod repeat_queue;
 
 // Tags our synthetic output for diagnostics and future input-source loop prevention.
 pub const INJECTED_INPUT_TAG: usize = 0x494f3834;
