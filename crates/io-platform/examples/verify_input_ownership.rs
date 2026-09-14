@@ -1,4 +1,4 @@
-//! Bounded PgUp/PgDn experiment. Only base bindings change; restore runs on errors.
+//! Bounded PgUp/PgDn experiment. Base/Fn target bindings only; restore runs on errors.
 //! Raw Input observes this keyboard, never suppresses or injects input.
 #![cfg_attr(windows, allow(unsafe_code))]
 
@@ -291,7 +291,7 @@ mod experiment {
                 std::thread::sleep(Duration::from_millis(2));
             }
             observer.pump();
-            if name == "baseline"
+            if (name == "baseline" || name == "restored")
                 && COUNTS
                     .lock()
                     .map_err(|_| "counter lock")?
@@ -336,15 +336,17 @@ mod experiment {
         }
         let before = device.snapshot()?;
         let mut after = before.clone();
-        for slot in [105usize, 108] {
-            after.blocks.get_mut("base").ok_or("missing base")?[slot * 4..slot * 4 + 4]
-                .copy_from_slice(&[5, 0, 0, 0]);
+        for layer in ["base", "function"] {
+            for slot in [105usize, 108] {
+                after.blocks.get_mut(layer).ok_or("missing layer")?[slot * 4..slot * 4 + 4]
+                    .copy_from_slice(&[5, 0, 0, 0]);
+            }
         }
         let plan = PreparedChange {
             token: after.revision(),
             before: before.clone(),
             after,
-            blocks: vec!["base".into()],
+            blocks: vec!["base".into(), "function".into()],
         };
         println!("{}", serde_json::to_string(&plan.preview())?);
         if !run {
@@ -378,16 +380,8 @@ mod experiment {
                 "Отпустите все клавиши. Следующий шаг временно отключает вывод только PgUp/PgDn.",
             )?;
             changes::apply(&mut device, &plan, directory)?;
-            ready("После Enter нажимайте PgUp/PgDn 8 секунд: проверка без обычного вывода.")?;
-            phases.push(observe(
-                &observer,
-                &mut device,
-                "stock-no-output",
-                8,
-                false,
-            )?);
             ready(
-                "После Enter нажимайте мягко/до упора и отпускайте обе клавиши 20 секунд: измерение хода.",
+                "После Enter 20 секунд нажимайте/отпускайте PgUp и PgDn: мягко, до упора, затем с Fn. В середине нажмите пробел — контроль работы наблюдателя.",
             )?;
             device.start_monitor()?;
             phases.push(observe(
@@ -406,21 +400,26 @@ mod experiment {
         let mut device = NativeDevice::open()?;
         let current = device.snapshot()?;
         let mut restored = current.clone();
-        restored
-            .blocks
-            .insert("base".into(), before.blocks["base"].clone());
+        for layer in ["base", "function"] {
+            restored
+                .blocks
+                .insert(layer.into(), before.blocks[layer].clone());
+        }
         let restore = PreparedChange {
             token: restored.revision(),
             before: current,
             after: restored,
-            blocks: vec!["base".into()],
+            blocks: vec!["base".into(), "function".into()],
         };
         changes::apply(&mut device, &restore, directory)?;
         let restored_revision = device.snapshot()?.revision();
         if restored_revision != before.revision() {
             return Err("Restore differs from initial snapshot; retain recovery files".into());
         }
-        phases.push(observe(&observer, &mut device, "restored", 10, false)?);
+        ready(
+            "Назначения восстановлены. После Enter снова нажмите/отпустите PgUp и PgDn по два раза — заключительный контроль.",
+        )?;
+        phases.push(observe(&observer, &mut device, "restored", 60, false)?);
         let result = serde_json::json!({"schemaVersion":1,"hardwareAccess":true,"firmware":"White 1.17",
             "beforeRevision":before.revision(),"afterRevision":restored_revision,"restored":true,
             "measurementError":measurement.as_ref().err().map(ToString::to_string),"rawInputErrors":*ERRORS.lock().map_err(|_| "counter lock")?,"phases":phases,

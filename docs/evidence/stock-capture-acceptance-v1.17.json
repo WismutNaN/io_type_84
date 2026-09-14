@@ -1,0 +1,173 @@
+{
+  "date": "2026-09-14",
+  "scope": "IO White 1.17; PgUp/PgDn base and Fn; [5,0,0,0]",
+  "accepted": {
+    "positiveBeforeAndAfter": true,
+    "noSelectedDigitalOutputDuringAnalog": true,
+    "unaffectedInputWitnessDuringNegativePhase": true,
+    "bothAnalogSlotsReachFullTravel": true,
+    "snapshotRestored": true,
+    "ownerConfirmedOriginalOperation": true
+  },
+  "measurement": {
+    "afterRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+    "beforeRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+    "firmware": "White 1.17",
+    "hardwareAccess": true,
+    "limits": [
+      "No power-cycle persistence test",
+      "Only PgUp/PgDn and selected input routes"
+    ],
+    "measurementError": null,
+    "phases": [
+      {
+        "analog": {},
+        "keys": {
+          "174": {
+            "down": 2,
+            "up": 2
+          },
+          "175": {
+            "down": 2,
+            "up": 2
+          }
+        },
+        "observerMessagesAndTarget": [
+          16,
+          8
+        ],
+        "phase": "baseline",
+        "seconds": 60
+      },
+      {
+        "analog": {
+          "105": {
+            "minimum_um": 130,
+            "packets": 2465,
+            "peak_um": 3970,
+            "samples_after_peak": 0
+          },
+          "108": {
+            "minimum_um": 120,
+            "packets": 1102,
+            "peak_um": 3960,
+            "samples_after_peak": 0
+          }
+        },
+        "keys": {},
+        "observerMessagesAndTarget": [
+          6,
+          6
+        ],
+        "phase": "stock-no-output-plus-analog",
+        "seconds": 20
+      },
+      {
+        "analog": {},
+        "keys": {
+          "174": {
+            "down": 2,
+            "up": 2
+          },
+          "175": {
+            "down": 2,
+            "up": 2
+          }
+        },
+        "observerMessagesAndTarget": [
+          15,
+          8
+        ],
+        "phase": "restored",
+        "seconds": 60
+      }
+    ],
+    "rawInputErrors": 0,
+    "restored": true,
+    "schemaVersion": 1
+  },
+  "earlierBaseOnlyMeasurement": {
+    "afterRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+    "beforeRevision": "562dce79deddc0a2f14da00f04b0251901fc74ddac80f8d653bf1d786caab9b5",
+    "firmware": "White 1.17",
+    "hardwareAccess": true,
+    "limits": [
+      "No power-cycle persistence test",
+      "Only PgUp/PgDn and selected input routes"
+    ],
+    "measurementError": null,
+    "phases": [
+      {
+        "analog": {},
+        "keys": {
+          "174": {
+            "down": 2,
+            "up": 2
+          },
+          "175": {
+            "down": 5,
+            "up": 5
+          }
+        },
+        "observerMessagesAndTarget": [
+          28,
+          14
+        ],
+        "phase": "baseline",
+        "seconds": 60
+      },
+      {
+        "analog": {},
+        "keys": {},
+        "observerMessagesAndTarget": [
+          0,
+          0
+        ],
+        "phase": "stock-no-output",
+        "seconds": 8
+      },
+      {
+        "analog": {
+          "105": {
+            "minimum_um": 0,
+            "packets": 7655,
+            "peak_um": 3980,
+            "samples_after_peak": 2
+          },
+          "108": {
+            "minimum_um": 0,
+            "packets": 5874,
+            "peak_um": 3960,
+            "samples_after_peak": 2
+          }
+        },
+        "keys": {},
+        "observerMessagesAndTarget": [
+          0,
+          0
+        ],
+        "phase": "stock-no-output-plus-analog",
+        "seconds": 20
+      },
+      {
+        "analog": {},
+        "keys": {},
+        "observerMessagesAndTarget": [
+          0,
+          0
+        ],
+        "phase": "restored",
+        "seconds": 10
+      }
+    ],
+    "rawInputErrors": 0,
+    "restored": true,
+    "schemaVersion": 1
+  },
+  "limits": [
+    "Fn presses follow operator instruction; FB has no current-layer bit.",
+    "Not a power-cycle, crash, USB-disconnect or whole-keyboard reliability acceptance.",
+    "No firmware, calibration, reset or ISP operations.",
+    "The 9-block snapshot does not include OS-mode."
+  ]
+}
